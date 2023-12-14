@@ -1,6 +1,10 @@
 1. **Recruiter: Configure Candidate Selection Criteria**
 
-As a recruiter, I want to be able to configure the system to collect data from specific platforms for candidate selection.
+As a recruiter, I want to be able to configure the system to collect data from specific platforms for candidate selection. This includes providing an input field where I can specify the platforms (Github or Stack Overflow) from which the system will gather data. Additionally, I should be able to set selection criteria such as the quality of code, problem-solving skills, ratings per contribution, and overall technical expertise.
+
+------------OR----------------
+
+As a recruiter, I want to be able to configure the system to collect data from specific platforms, namely GitHub and Stack Overflow, for candidate selection. This includes providing an input field where I can specify the selection criteria such as the quality of code, problem-solving skills, ratings per contribution, and overall technical expertise.
 
 _Acceptance Criteria:_
 
@@ -18,13 +22,13 @@ _Acceptance Criteria:_
 
 **Hiring Manager: Evaluate Code Challenges and Schedule Interviews**
 
-As a hiring manager, I want to access submitted code challenges from potential candidates and initiate the interview process.
+As a hiring manager, I want to access submitted code challenges from potential candidates, evaluate their solutions, and initiate the interview process based on the assessment.
 
 _Acceptance Criteria:_
 
 - View and evaluate code challenges submitted by candidates.
 - Request 1:1 interviews with the top candidates based on the code evaluation.
-  \*Provide availability for interviews through the platform.
+- Provide availability for interviews through the platform.
 
 **Candidate: Engage with Code Challenges and Track Application Process**
 
