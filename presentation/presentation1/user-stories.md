@@ -1,35 +1,46 @@
-Recruiter
+1. **Recruiter: Configure Candidate Selection Criteria**
 
-User Story: Candidate Selection
+As a recruiter, I want to be able to configure the system to collect data from specific platforms for candidate selection.
 
-As a recruiter, I want to configure the system to collect data from specific platforms for candidate selection. Add the selection criteria such as quality of code, problem solving skills, ratings given per contribution and overall technical expertise.
+_Acceptance Criteria:_
 
-i.	I want to select 10 candidates to receive a code challenge on their emails 
+- Define selection criteria such as quality of code, problem-solving skills, ratings per contribution, and overall technical expertise.
+- Specify the number of candidates to be selected for the code challenge.
 
-ii.	I want to be able to see top 3 candidates based on submitted code from different candidates
+2. **Partner Company: Receive and Evaluate Candidate Submissions**
 
-iii.	I can submit candidate details to partner company
+As a partner company, I want to efficiently receive candidate details from Doodle's recruiter to facilitate a collaborative hiring process.
 
-iv.	I want to view interview notes from the hiring manager
+_Acceptance Criteria:_
 
-Candidate
+- Receive comprehensive candidate submissions, including relevant details and qualifications.
+- Provide feedback on submitted candidates, contributing insights and assessments.
 
-User Story: Code Challenge
+**Hiring Manager: Evaluate Code Challenges and Schedule Interviews**
 
-As a candidate, I want to review the code challenge request and accept/reject
+As a hiring manager, I want to access submitted code challenges from potential candidates and initiate the interview process.
 
-i.	I want to access the code challenge, and be able to upload my code on the platform for evaluation
+_Acceptance Criteria:_
 
-ii.	I want to track my application process and access feedback notes
+- View and evaluate code challenges submitted by candidates.
+- Request 1:1 interviews with the top candidates based on the code evaluation.
+  \*Provide availability for interviews through the platform.
 
-Hiring Manager
+**Candidate: Engage with Code Challenges and Track Application Process**
 
-User Story: Candidate Evaluation
+As a candidate, I want to review the code challenge request, submit my code for evaluation, and track my application process.
 
-As a Hiring Manager, I want to access submitted code challenges from potential candidates.
+_Acceptance Criteria:_
 
-i.	I want to be able to request a 1:1 interview with top 3 candidates
+- Access the code challenge and upload code for evaluation.
+- Receive feedback notes on the submitted code.
+- Track the status of my application process, including interview invitations and feedback.
 
-ii.	I want to provide my availability for the interviews through the platform
+**System: Invalidate Coding Solution Interface after a Specified Period**
 
-iii.	I want to upload interview notes for the top 3 candidates
+As part of the automated process, the system should invalidate the coding solution interface after a specified period.
+
+_Acceptance Criteria:_
+
+- Set a predefined timeframe for the coding solution interface validity.
+- Automatically invalidate the interface once the specified period elapses.
