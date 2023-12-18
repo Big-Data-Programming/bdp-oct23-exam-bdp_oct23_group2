@@ -2,7 +2,19 @@
 
 ### Recruiter: Configure Candidate Selection Criteria
 
-As a recruiter, I want to be able to configure the system to collect data from specific platforms, namely GitHub and Stack Overflow, for candidate selection. This includes providing an input field where I can specify the selection criteria such as the quality of code, problem-solving skills, ratings per contribution, and overall technical expertise, no of candidates, location.
+As a recruiter, I want to be able to configure the system to collect data from specific platforms, namely GitHub and Stack Overflow, for candidate selection. This includes providing an input field where I can specify the selection criteria such as:
+Coding Activity
+Project Contributions
+Skills Proficiency
+Collaboration and Teamwork
+Problem-Solving Skills
+Community Involvement
+Open-Source Contributions
+Coding Challenges and Competitions
+location
+number of candidates
+
+As a recruiter, I want to be able to configure the system to collect data from specific platforms, namely GitHub and Stack Overflow, for candidate selection. The system should include an input field where I can specify selection criteria, including coding activity, project contributions, skills proficiency, collaboration and teamwork, community involvement, open-source contributions, and the candidate's location. Additionally, the system should allow me to define the desired number of candidates for selection.
 
 **Acceptance Criteria:**
 
@@ -38,4 +50,3 @@ This algorithm addresses the challenge of identifying the best candidates with t
 
 **Insight:**
 This automation streamlines manual processes, providing enhanced insights into the coding efficiency of candidates.
-
