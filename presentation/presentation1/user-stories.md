@@ -2,18 +2,6 @@
 
 ### Recruiter: Configure Candidate Selection Criteria
 
-As a recruiter, I want to be able to configure the system to collect data from specific platforms, namely GitHub and Stack Overflow, for candidate selection. This includes providing an input field where I can specify the selection criteria such as:
-Coding Activity
-Project Contributions
-Skills Proficiency
-Collaboration and Teamwork
-Problem-Solving Skills
-Community Involvement
-Open-Source Contributions
-Coding Challenges and Competitions
-location
-number of candidates
-
 As a recruiter, I want to be able to configure the system to collect data from specific platforms, namely GitHub and Stack Overflow, for candidate selection. The system should include an input field where I can specify selection criteria, including coding activity, project contributions, skills proficiency, collaboration and teamwork, community involvement, open-source contributions, and the candidate's location. Additionally, the system should allow me to define the desired number of candidates for selection.
 
 **Acceptance Criteria:**
@@ -24,9 +12,21 @@ As a recruiter, I want to be able to configure the system to collect data from s
 
 ---
 
+### Hiring Manager: Evaluate Code Challenges and Schedule Interviews
+
+As a hiring manager, I want to access submitted code challenges from potential candidates, evaluate their solutions, and initiate the interview process based on the assessment.
+
+**Acceptance Criteria:**
+
+- View and evaluate code challenges submitted by candidates.
+- Request 1:1 interviews with the top candidates based on the code evaluation.
+- Provide availability for interviews through the platform.
+
+---
+
 ### Candidate Selection Algorithm - Precision Candidate Identification
 
-**As part of our automated process, the algorithm aims to meticulously select the most suitable candidates based on outlined criteria.**
+As part of our automated process, the algorithm aims to meticulously select the most suitable candidates based on outlined criteria.
 
 **Acceptance Criteria:**
 
@@ -40,7 +40,7 @@ This algorithm addresses the challenge of identifying the best candidates with t
 
 ### Code Submission Selection Algorithm - Automated Code Challenge Assessment
 
-**As part of our automated process, the algorithm is designed to evaluate code challenges submitted by candidates.**
+As part of our automated process, the algorithm is designed to evaluate code challenges submitted by candidates.
 
 **Acceptance Criteria:**
 
@@ -50,3 +50,15 @@ This algorithm addresses the challenge of identifying the best candidates with t
 
 **Insight:**
 This automation streamlines manual processes, providing enhanced insights into the coding efficiency of candidates.
+
+---
+
+### Candidate: Engage with Code Challenges and Track Application Process
+
+As a candidate, I want to review the code challenge request, submit my code for evaluation, and track my application process.
+
+**Acceptance Criteria:**
+
+- Access the code challenge and upload code for evaluation.
+- Receive feedback notes on the submitted code.
+- Track the status of my application process, including interview invitations and feedback.
