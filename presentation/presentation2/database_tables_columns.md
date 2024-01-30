@@ -4,7 +4,7 @@
 
    - GitHub Username
    - Full Name
-   - Email (if public)
+   - Email
 
 2. **Repository Information:**
 
