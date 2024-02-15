@@ -2,35 +2,36 @@
 
 1. **User Information:**
 
-   - GitHub Username
-   - Full Name
-   - Email
+   - GitHub Username - maybe
+   - Full Name - yes
+   - Email -yes
 
 2. **Repository Information:**
 
    - Repository Name
-   - Language
-   - Number of Stars
+   - Language   -yes
+   - Number of Stars -yes
    - Number of Forks
-   - Last Commit Date
+   - Last Commit Date - maybe
 
 3. **Contributions:**
 
-   - Total Commits
+   - Total Commits 
    - Commit History (timestamps, messages)
 
 4. **Issues and Pull Requests:**
    - Number of Open Issues
-   - Number of Closed Issues
-   - Number of Open Pull Requests
-   - Number of Merged Pull Requests
+   - Number of Closed Issues   - yes
+   - Number of Open Pull Requests -yes
+   - Number of Merged Pull Requests  -yes
+   - Projects/project descriptions (README files) - yes
 
 #### Database Columns:
 
 **User Table:**
 
 - `id` (Primary Key)
-- `github_username` (Unique)
+- `github_username` (Unique) -
 - `full_name`
 - `email`
 
@@ -88,18 +89,18 @@
 1. **User Information:**
 
    - Stack Overflow Username
-   - Reputation
-   - Badges
+   - Reputation -  yes
+   - Badges -yes
 
 2. **Question and Answer History:**
 
    - Total Questions Asked
-   - Total Answers Provided
+   - Total Answers Provided -yes
    - Upvotes and Downvotes on Questions
-   - Upvotes and Downvotes on Answers
+   - Upvotes and Downvotes on Answers -yes
 
 3. **Tags and Topics:**
-   - Tags associated with the user's questions and answers
+   - Tags associated with the user's questions and answers -maybe
 
 #### Database Columns (Example):
 
