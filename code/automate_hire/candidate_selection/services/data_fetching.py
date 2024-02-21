@@ -2,12 +2,10 @@ import asyncio
 import aiohttp
 import time
 from github import Github
-import agithub
+import requests
 
 
-
-
-async def fetch_github_users(access_token, since_user_id=None, max_users=None, batch_size=100):
+async def fetch_github_users(access_token, since_user_id=None, max_users=None, batch_size=1000):
     """
     Fetch GitHub users asynchronously using aiohttp.
 
@@ -25,7 +23,6 @@ async def fetch_github_users(access_token, since_user_id=None, max_users=None, b
         users = []
         start_time = time.time()
         try:
-
             for user in g.get_users(since=since_user_id):
                 users.append(user)
                 if len(users) >= max_users:
@@ -55,7 +52,6 @@ async def fetch_repository_data(access_token, username):
     }
     async with aiohttp.ClientSession() as session:
         async with session.get(f'https://api.github.com/users/{username}/repos', headers=headers, ssl=False) as response:
-
             if response.status == 200:
                 repositories = await response.json()
                 for repo in repositories:
@@ -71,7 +67,6 @@ async def fetch_repository_data(access_token, username):
             else:
                 print(f"Failed to fetch repositories for user {username}. Status code: {response.status}")
 
-
 async def fetch_commit_data(access_token, username, repository_name):
     """
     Fetch commit data asynchronously from GitHub.
@@ -84,19 +79,22 @@ async def fetch_commit_data(access_token, username, repository_name):
     Returns:
         List of dictionaries containing commit data.
     """
-    async with aiohttp.ClientSession() as session:
-        g = Github(access_token)
-        user = g.get_user(username)
-        repository = user.get_repo(repository_name)
-        commits = repository.get_commits()
-        commit_data = []
-        async for commit in commits:
-            commit_info = {
-                'timestamp': commit.commit.author.date,
-                'message': commit.commit.message
-            }
-            commit_data.append(commit_info)
-    return commit_data
+    headers = {'Authorization': f'token {access_token}'}
+    async with aiohttp.ClientSession(headers=headers) as session:
+        async with session.get(f'https://api.github.com/repos/{username}/{repository_name}/commits', ssl=False) as response:
+            if response.status == 200:
+                commits = await response.json()
+                commit_data = []
+                for commit in commits:
+                    commit_info = {
+                        'timestamp': commit['commit']['author']['date'],
+                        'message': commit['commit']['message']
+                    }
+                    commit_data.append(commit_info)
+                return commit_data
+            else:
+                print(f"Failed to fetch commits for {repository_name}. Status code: {response.status}")
+                return []
 
 async def fetch_issue_data(access_token, username, repository_name):
     """
@@ -110,21 +108,22 @@ async def fetch_issue_data(access_token, username, repository_name):
     Returns:
         Dictionary containing issue data.
     """
-    async with aiohttp.ClientSession() as session:
-        g = Github(access_token)
-        user = g.get_user(username)
-        repository = user.get_repo(repository_name)
-        issues = repository.get_issues(state='all')
-        issue_data = {
-            'open_issues': 0,
-            'closed_issues': 0
-        }
-        async for issue in issues:
-            if issue.state == 'open':
-                issue_data['open_issues'] += 1
+    headers = {'Authorization': f'token {access_token}'}
+    async with aiohttp.ClientSession(headers=headers) as session:
+        async with session.get(f'https://api.github.com/repos/{username}/{repository_name}/issues', ssl=False) as response:
+            if response.status == 200:
+                issues = await response.json()
+                open_issues = 0
+                closed_issues = 0
+                for issue in issues:
+                    if issue['state'] == 'open':
+                        open_issues += 1
+                    else:
+                        closed_issues += 1
+                return {'open_issues': open_issues, 'closed_issues': closed_issues}
             else:
-                issue_data['closed_issues'] += 1
-    return issue_data
+                print(f"Failed to fetch issues for {repository_name}. Status code: {response.status}")
+                return {'open_issues': 0, 'closed_issues': 0}
 
 async def fetch_pull_request_data(access_token, username, repository_name):
     """
@@ -147,7 +146,7 @@ async def fetch_pull_request_data(access_token, username, repository_name):
             'open_prs': 0,
             'merged_prs': 0
         }
-        async for pr in pull_requests:
+        for pr in pull_requests:
             if pr.state == 'open':
                 pr_data['open_prs'] += 1
             if pr.merged:
@@ -165,27 +164,43 @@ async def fetch_user_contribution_data(access_token, username):
     Returns:
         Dictionary containing user contribution data.
     """
-    async with aiohttp.ClientSession() as session:
-        g = Github(access_token)
-        user = g.get_user(username)
-        contributions = user.get_contributions()
-        contribution_data = {
-            'total_commits': 0,
-            'total_pr_opened': 0,
-            'total_pr_merged': 0,
-            'total_issues_opened': 0,
-            'total_issues_closed': 0
-        }
-        async for contribution in contributions:
-            if contribution.type == 'Commit':
-                contribution_data['total_commits'] += 1
-            if contribution.type == 'PullRequest':
+    headers = {'Authorization': f'token {access_token}'}
+    response = requests.get(f'https://api.github.com/users/{username}/repos', headers=headers)
+    repos = response.json()
+    
+    contribution_data = {
+        'total_commits': 0,
+        'total_pr_opened': 0,
+        'total_pr_merged': 0,
+        'total_issues_opened': 0,
+        'total_issues_closed': 0
+    }
+    print("len ",len(repos))
+    print("contribution_data", contribution_data)
+    for repo in repos:
+        response = requests.get(repo['commits_url'].replace('{/sha}', ''), headers=headers)
+        commits = response.json()
+        contribution_data['total_commits'] += len(commits)
+
+        response = requests.get(repo['pulls_url'].replace('{/number}', ''), headers=headers)
+        prs = response.json()
+        print("len prs", len(prs))
+        if len(prs) > 0:
+            for pr in prs:
                 contribution_data['total_pr_opened'] += 1
-                if contribution.payload.get('action') == 'closed' and contribution.payload.get('pull_request', {}).get('merged'):
+                print("pr", pr)
+                if pr.get('merged'):  
                     contribution_data['total_pr_merged'] += 1
-            if contribution.type == 'Issue':
-                contribution_data['total_issues_opened'] += 1
-                if contribution.payload.get('action') == 'closed':
-                    contribution_data['total_issues_closed'] += 1
+
+        response = requests.get(repo['issues_url'].replace('{/number}', ''), headers=headers)
+        issues = response.json()
+        for issue in issues:
+            contribution_data['total_issues_opened'] += 1
+            if issue['state'] == 'closed':
+                contribution_data['total_issues_closed'] += 1
+
     return contribution_data
+
+
+
 

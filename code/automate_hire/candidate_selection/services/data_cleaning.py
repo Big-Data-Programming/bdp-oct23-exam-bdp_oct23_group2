@@ -1,6 +1,6 @@
 from candidate_selection.models import User
 from datetime import datetime
-
+import pytz
 from asgiref.sync import sync_to_async
 
 
@@ -42,14 +42,14 @@ def clean_repository_data(repository_data):
         'language': repository_data.get('language', None),
         'stars': repository_data.get('stars', 0),
         'forks': repository_data.get('forks', 0),
-        'last_commit_date': repository_data.get('last_commit_date', None)  # Set to None if missing
+        'last_commit_date': repository_data.get('last_commit_date', None)  
     }
 
     if cleaned_data['last_commit_date'] is not None:
         try:
             cleaned_data['last_commit_date'] = datetime.strptime(cleaned_data['last_commit_date'], '%Y-%m-%d').date()
         except ValueError:
-            cleaned_data['last_commit_date'] = None  # Invalid date format
+            cleaned_data['last_commit_date'] = None  
 
     return cleaned_data
 
@@ -63,11 +63,20 @@ def clean_commit_data(commit_data):
     Returns:
         dict: Cleaned commit data.
     """
+    timestamp_str = commit_data.get('timestamp')
+    timestamp = None
+    if timestamp_str:
+        try:
+            timestamp = datetime.strptime(timestamp_str, '%Y-%m-%dT%H:%M:%SZ')
+            timestamp = pytz.utc.localize(timestamp)
+        except ValueError:
+            pass
     cleaned_data = {
-        'timestamp': commit_data.get('commit', {}).get('author', {}).get('date', None),
-        'message': commit_data.get('commit', {}).get('message', ''),
+        'timestamp': timestamp,
+        'message': commit_data.get('message', ''),
     }
     return cleaned_data
+
 
 def clean_issue_data(issue_data):
     """
@@ -79,6 +88,7 @@ def clean_issue_data(issue_data):
     Returns:
         dict: Cleaned issue data.
     """
+
     cleaned_data = {
         'open_issues': issue_data.get('open_issues', 0),
         'closed_issues': issue_data.get('closed_issues', 0),
@@ -231,6 +241,7 @@ def save_cleaned_user_contribution_data(cleaned_data, user):
     Returns:
         GitHubUserContribution: Saved GitHubUserContribution model instance.
     """
+    print("cleaned_data inside the func", cleaned_data)
     contribution = user.githubusercontribution_set.create(**cleaned_data)
     return contribution
 

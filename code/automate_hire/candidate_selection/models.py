@@ -38,12 +38,12 @@ class GitHubUserContribution(models.Model):
     total_pr_merged = models.IntegerField()
     total_issues_opened = models.IntegerField()
     total_issues_closed = models.IntegerField()
-    daily_date = models.DateField()
-    daily_commits = models.IntegerField()
-    daily_pr_opened = models.IntegerField()
-    daily_pr_merged = models.IntegerField()
-    daily_issues_opened = models.IntegerField()
-    daily_issues_closed = models.IntegerField()
+    daily_date = models.DateField(null=True, blank=True)
+    daily_commits = models.IntegerField(null=True, blank=True)
+    daily_pr_opened = models.IntegerField(null=True, blank=True)
+    daily_pr_merged = models.IntegerField(null=True, blank=True)
+    daily_issues_opened = models.IntegerField(null=True, blank=True)
+    daily_issues_closed = models.IntegerField(null=True, blank=True)
 
 
 # StackOverflow Data Models
