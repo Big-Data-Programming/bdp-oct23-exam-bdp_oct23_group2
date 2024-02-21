@@ -101,7 +101,7 @@
 3. **Tags and Topics:**
    - Tags associated with the user's questions and answers
 
-#### Database Columns (Example):
+#### Database Columns:
 
 **StackOverflowUser Table:**
 
