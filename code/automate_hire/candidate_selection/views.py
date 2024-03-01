@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 import asyncio
 
-from .services.data_insertion import insert_data
+from .services.data_insertion import insert_data, insert_stackoverflow_data
 
 
 def fetch_data(request):
@@ -13,3 +13,9 @@ def fetch_data(request):
     asyncio.run(insert_data())
     
     return HttpResponse('Data fetched and inserted successfully!')
+
+def fetch_stackoverflow_data(request):
+    
+    insert_stackoverflow_data()
+    
+    return HttpResponse('Stackoverflow Data fetched successfully!')

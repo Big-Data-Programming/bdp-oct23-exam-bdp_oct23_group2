@@ -2,6 +2,7 @@ from candidate_selection.models import User
 from datetime import datetime
 import pytz
 from asgiref.sync import sync_to_async
+import re
 
 
 
@@ -16,6 +17,7 @@ def clean_github_user_data(user_data):
         dict: Cleaned user data.
     """
     cleaned_data = {}
+    print('clean data', user_data)
     if not user_data.login or not user_data.name or not user_data.email or not user_data.location:
         return None
     else:
@@ -151,7 +153,6 @@ def save_cleaned_user_data(cleaned_data):
         github_username=cleaned_data['github_username'],
         defaults={'full_name': cleaned_data['full_name'], 'email': cleaned_data['email'], 'location': cleaned_data['location']}
     )
-    # Update user data if already exists
     if not created:
         user.full_name = cleaned_data['full_name']
         user.email = cleaned_data['email']
@@ -245,3 +246,63 @@ def save_cleaned_user_contribution_data(cleaned_data, user):
     contribution = user.githubusercontribution_set.create(**cleaned_data)
     return contribution
 
+
+# Stackoverflow data cleaning
+def clean_answers_data(answers_dict):
+    cleaned_answers_dict = {}
+    for user_id, user_data in answers_dict.items():
+        cleaned_answers = []
+        for answer in user_data['answers']:
+            clean_answer_body = re.sub('<[^<]+?>', '', answer['body'])
+            clean_answer_body = clean_answer_body.strip()
+            cleaned_answers.append({
+                'answer_id': answer['answer_id'],
+                'question_id': answer['question_id'],
+                'body': clean_answer_body
+            })
+        cleaned_user_data = {
+            'reputation': user_data['reputation'],
+            'accept_rate': user_data['accept_rate'],
+            'answers': cleaned_answers
+        }
+        cleaned_answers_dict[user_id] = cleaned_user_data
+    return cleaned_answers_dict
+
+
+
+def clean_user_data(user):
+    cleaned_user = {
+        'user_id': user['user_id'],
+        'reputation': user.get('reputation', 0),
+        'badges': user.get('badges', 0)
+        # Add more fields to clean as needed
+    }
+    return cleaned_user
+def clean_answers_data(answers_dict):
+    cleaned_answers_dict = {}
+    for user_id, user_data in answers_dict.items():
+        cleaned_answers = []
+        for answer in user_data['answers']:
+            cleaned_answer_body = answer['body'].strip()  # Remove leading/trailing whitespace
+            cleaned_answers.append({
+                'answer_id': answer['answer_id'],
+                'question_id': answer['question_id'],
+                'body': cleaned_answer_body
+            })
+        cleaned_answers_dict[user_id] = {
+            'reputation': user_data['reputation'],
+            'accept_rate': user_data['accept_rate'],
+            'answers': cleaned_answers
+        }
+    return cleaned_answers_dict
+
+def clean_questions_and_answers_data(user_data):
+    cleaned_data = {
+        'total_questions': user_data.get('total_questions', 0),
+        'total_answers': user_data.get('total_answers', 0),
+        'question_upvotes': user_data.get('question_upvotes', 0),
+        'question_downvotes': user_data.get('question_downvotes', 0),
+        'answer_upvotes': user_data.get('answer_upvotes', 0),
+        'answer_downvotes': user_data.get('answer_downvotes', 0)
+    }
+    return cleaned_data
