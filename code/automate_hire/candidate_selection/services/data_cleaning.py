@@ -1,8 +1,5 @@
-from candidate_selection.models import User
 from datetime import datetime
 import pytz
-from asgiref.sync import sync_to_async
-
 
 
 def clean_github_user_data(user_data):
@@ -77,7 +74,6 @@ def clean_commit_data(commit_data):
     }
     return cleaned_data
 
-
 def clean_issue_data(issue_data):
     """
     Clean fetched issue data before saving to the database.
@@ -135,113 +131,3 @@ def clean_user_contribution_data(contribution_data):
         'daily_issues_closed': contribution_data.get('daily_issues_closed', 0),
     }
     return cleaned_data
-
-@sync_to_async
-def save_cleaned_user_data(cleaned_data):
-    """
-    Save cleaned GitHub user data into the database.
-
-    Parameters:
-        cleaned_data (dict): Cleaned user data.
-
-    Returns:
-        User: Saved User model instance.
-    """
-    user, created = User.objects.get_or_create(
-        github_username=cleaned_data['github_username'],
-        defaults={'full_name': cleaned_data['full_name'], 'email': cleaned_data['email'], 'location': cleaned_data['location']}
-    )
-    # Update user data if already exists
-    if not created:
-        user.full_name = cleaned_data['full_name']
-        user.email = cleaned_data['email']
-        user.location = cleaned_data['location']
-        user.save()
-    return user
-
-@sync_to_async
-def save_cleaned_repository_data(cleaned_data, user):
-    """
-    Save cleaned repository data into the database.
-
-    Parameters:
-        cleaned_data (dict): Cleaned repository data.
-        user (User): User model instance to which the repository belongs.
-
-    Returns:
-        Repository: Saved Repository model instance.
-    """
-    repository, created = user.repository_set.get_or_create(
-        name=cleaned_data['name'],
-        defaults={'language': cleaned_data['language'], 'stars': cleaned_data['stars'], 'forks': cleaned_data['forks'], 'last_commit_date': cleaned_data['last_commit_date']}
-    )
-    # Update repository data if already exists
-    if not created:
-        repository.language = cleaned_data['language']
-        repository.stars = cleaned_data['stars']
-        repository.forks = cleaned_data['forks']
-        repository.last_commit_date = cleaned_data['last_commit_date']
-        repository.save()
-    return repository
-
-@sync_to_async
-def save_cleaned_commit_data(cleaned_data, repository):
-    """
-    Save cleaned commit data into the database.
-
-    Parameters:
-        cleaned_data (dict): Cleaned commit data.
-        repository (Repository): Repository model instance to which the commit belongs.
-
-    Returns:
-        Commit: Saved Commit model instance.
-    """
-    commit = repository.commit_set.create(timestamp=cleaned_data['timestamp'], message=cleaned_data['message'])
-    return commit
-
-@sync_to_async
-def save_cleaned_issue_data(cleaned_data, repository):
-    """
-    Save cleaned issue data into the database.
-
-    Parameters:
-        cleaned_data (dict): Cleaned issue data.
-        repository (Repository): Repository model instance to which the issue belongs.
-
-    Returns:
-        Issue: Saved Issue model instance.
-    """
-    issue = repository.issue_set.create(open_issues=cleaned_data['open_issues'], closed_issues=cleaned_data['closed_issues'])
-    return issue
-
-@sync_to_async
-def save_cleaned_pull_request_data(cleaned_data, repository):
-    """
-    Save cleaned pull request data into the database.
-
-    Parameters:
-        cleaned_data (dict): Cleaned pull request data.
-        repository (Repository): Repository model instance to which the pull request belongs.
-
-    Returns:
-        PullRequest: Saved PullRequest model instance.
-    """
-    pr = repository.pullrequest_set.create(open_prs=cleaned_data['open_prs'], merged_prs=cleaned_data['merged_prs'])
-    return pr
-
-@sync_to_async
-def save_cleaned_user_contribution_data(cleaned_data, user):
-    """
-    Save cleaned user contribution data into the database.
-
-    Parameters:
-        cleaned_data (dict): Cleaned user contribution data.
-        user (User): User model instance to which the contribution belongs.
-
-    Returns:
-        GitHubUserContribution: Saved GitHubUserContribution model instance.
-    """
-    print("cleaned_data inside the func", cleaned_data)
-    contribution = user.githubusercontribution_set.create(**cleaned_data)
-    return contribution
-

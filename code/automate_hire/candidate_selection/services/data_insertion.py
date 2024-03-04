@@ -1,7 +1,8 @@
 import sys
 import asyncio
 from asgiref.sync import sync_to_async
-
+import requests
+import time
 from config import GITHUB_ACCESS_TOKEN 
 
 from candidate_selection.models import User
@@ -123,7 +124,7 @@ def save_cleaned_user_contribution_data(cleaned_data, user):
     return contribution
 
 
-async def insert_data():
+async def fetch_data_github():
     """
     Insert data into the database.
     """
@@ -172,3 +173,58 @@ async def insert_data():
 
 
 
+def fetch_stackoverflow_users(site='stackoverflow', page=1, pagesize=100):
+    url = f"https://api.stackexchange.com/2.3/users?site={site}&page={page}&pagesize={pagesize}"
+    print("Request URL:", url)  # Debugging statement
+    response = requests.get(url)
+    print("Response Status Code:", response.status_code)  # Debugging statement
+    print("Response Content:", response.content)  # Debugging statement
+    if response.status_code == 200:
+        data = response.json()
+        users = data.get('items', [])
+        return users
+    elif response.status_code == 429:  # Rate limit exceeded
+        retry_after = int(response.headers.get('retry-after', 30))
+        print(f"Rate limit exceeded. Waiting for {retry_after} seconds before retrying.")
+        time.sleep(retry_after)
+        return fetch_stackoverflow_users(site, page, pagesize)
+    else:
+        print(f"Failed to fetch users. Status code: {response.status_code}")
+        return []
+
+def fetch_user_answers(users, site='stackoverflow'):
+    answers_dict = {}
+
+    for user in users:
+        user_id = user['user_id']
+        reputation = user.get('reputation', 'N/A')
+        accept_rate = user.get('accept_rate', 'N/A')
+        url = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?order=asc&sort=votes&site={site}"
+        response = requests.get(url)
+        time.sleep(1)
+        if response.status_code == 200:
+            data = response.json()
+            answers = data.get('items', [])
+            answers_dict[user_id] = {'reputation': reputation, 'accept_rate': accept_rate, 'answers': answers}
+        elif response.status_code == 429:  # Rate limit exceeded
+            print("Rate limit exceeded. Please wait before retrying.")
+        else:
+            print(f"Failed to fetch answers for user ID {user_id}. Status code: {response.status_code}")
+
+    return answers_dict
+
+def fetech_stackoverflow_users():
+    users = fetch_stackoverflow_users()
+    print(f"Fetched {len(users)} users.")
+    # answers_dict = fetch_user_answers(users)
+    # time.sleep(2)
+    # for user_id, user_data in answers_dict.items():
+    #     print(f"User ID: {user_id}")
+    #     print(f"Reputation: {user_data['reputation']}")
+    #     print(f"Accept Rate: {user_data['accept_rate']}")
+    #     print("Answers:")
+    #     for answer in user_data['answers']:
+    #         print("Answer ID:", answer['answer_id'])
+    #         print("Question ID:", answer['question_id'])
+    #         print("Answer Body:", answer['body'])
+    #         print("-----------------------------")
