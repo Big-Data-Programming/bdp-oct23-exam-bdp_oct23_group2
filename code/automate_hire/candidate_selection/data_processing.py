@@ -1,7 +1,12 @@
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-
+import matplotlib.pyplot as plt
+from sklearn.metrics import silhouette_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+import pickle
 
 from .models import User, Repository, Commit, Issue, PullRequest
 
@@ -95,22 +100,8 @@ def create_pull_request_df():
         pr_data['merged_prs'].append(pr.merged_prs)
     return pd.DataFrame(pr_data)
 
-def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df, n_clusters=3):
-    """
-    Cluster users based on their GitHub contributions.
-
-    Parameters:
-        user_df (pd.DataFrame): DataFrame containing user data.
-        repository_df (pd.DataFrame): DataFrame containing repository data.
-        commit_df (pd.DataFrame): DataFrame containing commit data.
-        issue_df (pd.DataFrame): DataFrame containing issue data.
-        pull_request_df (pd.DataFrame): DataFrame containing pull request data.
-        n_clusters (int): Number of clusters to create.
-
-    Returns:
-        pd.DataFrame: DataFrame containing user data with cluster labels.
-
-    """
+def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
+   
     merged_df = pd.merge(user_df, repository_df, left_on='id', right_on='user_id')
     merged_df = merged_df.rename(columns={'id_y': 'repository_id'})
     merged_df = merged_df.drop('id_x', axis=1)
@@ -135,23 +126,94 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df, 
         'total_issues_opened': 'sum',
         'total_issues_closed': 'sum'
     }).reset_index()
-    print("user_features", user_features.head())
-    print("user_features", user_features.columns)
+    # print("user_features head", user_features.head())
+    # print("user_features  columns", user_features.columns)
+    
 
-    # Scale the features and fit KMeans clustering model
+    #######
+    #ML code start
 
-    # scaler = StandardScaler()
-    # scaled_features = scaler.fit_transform(user_features.drop('user_id', axis=1))
+    #feature sccaling
+    scaler = StandardScaler()
+    scaled_features = scaler.fit_transform(user_features.drop('user_id', axis=1))
+    
 
+    #k means and elbow method to find optimum clusters 
+    # inertia = []
+    # for n_clusters in range(1, 11):       #range of no. of clusters (1,11) so that it has a suficient range to compare
+    #     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
+    #     print(kmeans)
+    #     kmeans.fit(scaled_features)
+    #     inertia.append(kmeans.inertia_)
 
-    # kmeans = KMeans(n_clusters=n_clusters)
-    # kmeans.fit(scaled_features)
+    # Visualize inertia values
+    # plt.plot(range(1, 11), inertia, marker='o')   #commented out the plot 
+    # plt.title('Elbow Method')
+    # plt.xlabel('Number of Clusters')
+    # plt.ylabel('Inertia')
+    # plt.show()                 
 
+    #optimal number of clusters is 4 but i forced it to use 2
+        
+    #apply k means AGAIN with the optimum n_clusters and then
+    kmeans = KMeans(n_clusters=2, random_state=42, n_init='auto')
+    #print(scaled_features)
+    kmeans.fit(scaled_features)
+    #assign cluster label
+    user_features['cluster_label'] = kmeans.labels_
 
-    # user_features['cluster'] = kmeans.labels_
-    # # print("user_features", user_features.head())
+    # Visualize clusters 
+    # plt.scatter(user_features['total_commits'], user_features['total_issues_opened'], c=kmeans.labels_, cmap='viridis')
+    # plt.title('K-means Clustering')
+    # plt.xlabel('total_commits')    ##for now plotting these 2 features 
+    # plt.ylabel('total_issues_opened')       ##
+    # plt.show()
 
-    # return user_features
+    #IF print clusters
+    print("Cluster Centers:")
+    print(kmeans.cluster_centers_)
+
+    # Print number of users in each cluster
+    print("Number of users in each cluster:")
+    print(user_features['cluster_label'].value_counts())
+
+    # Print user features along with cluster labels
+    print("User features with cluster labels:")
+    print(user_features)
+
+    
+    # pickle the k means
+    with open('kmeans_model.pkl', 'wb') as f:
+        pickle.dump(kmeans, f)
+
+    
+
+    #logistic regression.
+
+    X = user_features.drop(columns=['cluster_label'])  # Features excluding the cluster label
+    y = user_features['cluster_label'] 
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
+
+    logreg_model = LogisticRegression()
+    logreg_model.fit(X_train, y_train)
+
+    accuracy = logreg_model.score(X_test, y_test) #slightly less reliable evaluation metrics due to the smaller testing set.
+    print("Accuracy:", accuracy)
+    predicted = logreg_model.predict(X_test)
+    confusion_matrix = metrics.confusion_matrix(y_test, predicted)
+    print(confusion_matrix)
+
+    # pickle the logistic regression
+    with open('logreg_model.pkl', 'wb') as f:
+        pickle.dump(logreg_model, f)
+
+    # load pickled loogistic regression
+    with open('logreg_model.pkl', 'rb') as f:
+        loaded_logreg  = pickle.load(f)
+        
+    # load the pickled k means
+    with open('kmeans_model.pkl', 'rb') as f:
+        loaded_kmeans = pickle.load(f)
 
 
 
