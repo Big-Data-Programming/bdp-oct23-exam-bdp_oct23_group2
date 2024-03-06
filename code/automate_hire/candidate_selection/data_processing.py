@@ -140,17 +140,18 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df, 
 
     # Scale the features and fit KMeans clustering model
 
-    scaler = StandardScaler()
-    scaled_features = scaler.fit_transform(user_features.drop('user_id', axis=1))
+    # scaler = StandardScaler()
+    # scaled_features = scaler.fit_transform(user_features.drop('user_id', axis=1))
 
 
-    kmeans = KMeans(n_clusters=n_clusters)
-    kmeans.fit(scaled_features)
+    # kmeans = KMeans(n_clusters=n_clusters)
+    # kmeans.fit(scaled_features)
 
 
-    user_features['cluster'] = kmeans.labels_
-    # print("user_features", user_features.head())
+    # user_features['cluster'] = kmeans.labels_
+    # # print("user_features", user_features.head())
 
-    return user_features
+    # return user_features
+
 
 
