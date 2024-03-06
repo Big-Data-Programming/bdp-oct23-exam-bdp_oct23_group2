@@ -101,8 +101,11 @@ def create_pull_request_df():
     return pd.DataFrame(pr_data)
 
 def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
-   
-    merged_df = pd.merge(user_df, repository_df, left_on='id', right_on='user_id')
+    selected_languages = ['Python', 'JavaScript', 'Java', 'Ruby', 'PHP', 'C++', 'C#', 'Go', 'Swift', 'Kotlin']
+    repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
+    # return None
+
+    merged_df = pd.merge(user_df, repository_df_filtered, left_on='id', right_on='user_id')
     merged_df = merged_df.rename(columns={'id_y': 'repository_id'})
     merged_df = merged_df.drop('id_x', axis=1)
 
@@ -126,34 +129,12 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
         'total_issues_opened': 'sum',
         'total_issues_closed': 'sum'
     }).reset_index()
-    # print("user_features head", user_features.head())
-    # print("user_features  columns", user_features.columns)
-    
-
-    #######
-    #ML code start
+  
 
     #feature sccaling
     scaler = StandardScaler()
     scaled_features = scaler.fit_transform(user_features.drop('user_id', axis=1))
     
-
-    #k means and elbow method to find optimum clusters 
-    # inertia = []
-    # for n_clusters in range(1, 11):       #range of no. of clusters (1,11) so that it has a suficient range to compare
-    #     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
-    #     print(kmeans)
-    #     kmeans.fit(scaled_features)
-    #     inertia.append(kmeans.inertia_)
-
-    # Visualize inertia values
-    # plt.plot(range(1, 11), inertia, marker='o')   #commented out the plot 
-    # plt.title('Elbow Method')
-    # plt.xlabel('Number of Clusters')
-    # plt.ylabel('Inertia')
-    # plt.show()                 
-
-    #optimal number of clusters is 4 but i forced it to use 2
         
     #apply k means AGAIN with the optimum n_clusters and then
     kmeans = KMeans(n_clusters=2, random_state=42, n_init='auto')
@@ -162,12 +143,6 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     #assign cluster label
     user_features['cluster_label'] = kmeans.labels_
 
-    # Visualize clusters 
-    # plt.scatter(user_features['total_commits'], user_features['total_issues_opened'], c=kmeans.labels_, cmap='viridis')
-    # plt.title('K-means Clustering')
-    # plt.xlabel('total_commits')    ##for now plotting these 2 features 
-    # plt.ylabel('total_issues_opened')       ##
-    # plt.show()
 
     #IF print clusters
     print("Cluster Centers:")
@@ -181,12 +156,10 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     print("User features with cluster labels:")
     print(user_features)
 
-    
     # pickle the k means
     with open('kmeans_model.pkl', 'wb') as f:
         pickle.dump(kmeans, f)
 
-    
 
     #logistic regression.
 

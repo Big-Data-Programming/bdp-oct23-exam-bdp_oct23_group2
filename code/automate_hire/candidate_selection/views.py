@@ -2,6 +2,8 @@ import asyncio
 import pandas as pd
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.core.mail import send_mail
+from django.http import JsonResponse
 
 from .models import User, Repository, Commit, Issue, PullRequest, GitHubUserContribution
 from .data_processing import create_user_df, create_repository_df, create_commit_df, create_issue_df, create_pull_request_df, cluster_users
@@ -71,6 +73,14 @@ def cluster_users_view(request):
 def run_selection_algorithm(request):
     pass
 
+def send_emails_to_candidates(request):
+    # Logic to select candidates and send emails
+    # Example: sending email to a candidate
+    candidate_email = 'candidate@example.com'
+    message = 'Congratulations! You have been selected.'
+    send_mail('Subject', message, 'from@example.com', [candidate_email])
+
+    return JsonResponse({'message': 'Emails sent successfully'})
 
 
 
