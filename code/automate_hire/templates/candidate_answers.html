@@ -66,5 +66,23 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("textarea").forEach(function (textarea) {
+          textarea.addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              var start = this.selectionStart;
+              var end = this.selectionEnd;
+              var value = this.value;
+              this.value =
+                value.substring(0, start) + "\n" + value.substring(end);
+              this.selectionStart = this.selectionEnd = start + 1;
+            }
+          });
+        });
+      });
+    </script>
   </body>
 </html>

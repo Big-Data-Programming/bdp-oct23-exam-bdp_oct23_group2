@@ -10,6 +10,25 @@ import pickle
 
 from .models import User, Repository, Commit, Issue, PullRequest
 
+# create a function to return a dataframe for testing starting after user_id 100
+def create_user_df_test():
+    """
+    Create a DataFrame containing user data.
+
+    Returns:
+        pd.DataFrame: DataFrame containing user data.
+
+    """
+    # limit the number of users to 81
+    users = User.objects.all()[81:]
+    user_data = {'id': [], 'github_username': [], 'full_name': [], 'email': [], 'location': []}
+    for user in users:
+        user_data['id'].append(user.id)
+        user_data['github_username'].append(user.github_username)
+        user_data['full_name'].append(user.full_name)
+        user_data['email'].append(user.email)
+        user_data['location'].append(user.location)
+    return pd.DataFrame(user_data)
 
 def create_user_df():
     """
@@ -19,7 +38,7 @@ def create_user_df():
         pd.DataFrame: DataFrame containing user data.
 
     """
-    # limit the number of users to 100
+    # limit the number of users to 80
     users = User.objects.all()[:80]
     user_data = {'id': [], 'github_username': [], 'full_name': [], 'email': [], 'location': []}
     for user in users:
@@ -101,12 +120,54 @@ def create_pull_request_df():
         pr_data['merged_prs'].append(pr.merged_prs)
     return pd.DataFrame(pr_data)
 
-def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
+def prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df):
+    """
+    Prepare a DataFrame containing data of new candidates.
+
+    Args:
+        user_df_test (pd.DataFrame): DataFrame containing test user data.
+        repository_df_filtered (pd.DataFrame): DataFrame containing filtered repository data.
+        commit_df (pd.DataFrame): DataFrame containing commit data.
+        issue_df (pd.DataFrame): DataFrame containing issue data.
+        pull_request_df (pd.DataFrame): DataFrame containing pull request data.
+
+    Returns:
+        pd.DataFrame: DataFrame containing data of new candidates.
+    """
+    merged_df = pd.merge(user_df_test, repository_df_filtered, left_on='id', right_on='user_id')
+    merged_df = merged_df.rename(columns={'id_y': 'repository_id'})
+    merged_df = merged_df.drop('id_x', axis=1)
+
+    commit_metrics = commit_df.groupby('repository_id').size().reset_index(name='total_commits')
+    issue_metrics = issue_df.groupby('repository_id').agg({'closed_issues': 'sum', 'open_issues': 'sum'}).reset_index()
+    issue_metrics.rename(columns={'open_issues': 'total_issues_opened'}, inplace=True)
+    issue_metrics.rename(columns={'closed_issues': 'total_issues_closed'}, inplace=True)
+
+    pr_metrics = pull_request_df.groupby('repository_id').agg({'merged_prs': 'sum', 'open_prs': 'sum'}).reset_index()
+    pr_metrics.rename(columns={'open_prs': 'total_pr_opened'}, inplace=True)
+    pr_metrics.rename(columns={'merged_prs': 'total_pr_merged'}, inplace=True)
+
+    merged_df = pd.merge(merged_df, commit_metrics, on='repository_id', how='left')
+    merged_df = pd.merge(merged_df, issue_metrics, on='repository_id', how='left')
+    merged_df = pd.merge(merged_df, pr_metrics, on='repository_id', how='left')
+
+    new_candidates_df = merged_df.groupby('user_id').agg({
+        'total_commits': 'sum',
+        'total_pr_opened': 'sum',
+        'total_pr_merged': 'sum',
+        'total_issues_opened': 'sum',
+        'total_issues_closed': 'sum'
+    }).reset_index()
+
+    return new_candidates_df
+
+def cluster_users(user_df_train, user_df_test, repository_df, commit_df, issue_df, pull_request_df):
     selected_languages = ['Python', 'JavaScript', 'Java', 'Ruby', 'PHP', 'C++', 'C#', 'Go', 'Swift', 'Kotlin']
     repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
-    # return None
 
-    merged_df = pd.merge(user_df, repository_df_filtered, left_on='id', right_on='user_id')
+
+    
+    merged_df = pd.merge(user_df_train, repository_df_filtered, left_on='id', right_on='user_id')
     merged_df = merged_df.rename(columns={'id_y': 'repository_id'})
     merged_df = merged_df.drop('id_x', axis=1)
  
@@ -123,10 +184,6 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     merged_df = pd.merge(merged_df, commit_metrics, on='repository_id', how='left')
     merged_df = pd.merge(merged_df, issue_metrics, on='repository_id', how='left')
     merged_df = pd.merge(merged_df, pr_metrics, on='repository_id', how='left')
-
-    # print("Merged DataFrame: asdfsdf", merged_df.head())
-    # print("Merged DataFrame shape:", merged_df.shape)
-    # return None
 
     user_features = merged_df.groupby('user_id').agg({
         'total_commits': 'sum',
@@ -211,11 +268,12 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     with open('kmeans_model.pkl', 'rb') as f:
         loaded_kmeans = pickle.load(f)
 
-#the traied model is giving output as cluster 0 = 69 bad candidates cluster 1= 6 good candidates
-        #with accuracy of 0.97 
-    
+
+
+    # Assuming you have a DataFrame containing new candidate data called 'new_candidates'
     # new_candidates = []
-    # scaled_new_candidates = scaler.transform(new_candidates.drop('user_id', axis=1)) 
+    new_candidates = prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df)
+
 
     # new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)    # k means .predict method
     # new_candidates['cluster_label'] = new_cluster_labels

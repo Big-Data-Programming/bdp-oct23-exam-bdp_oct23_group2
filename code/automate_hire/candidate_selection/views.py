@@ -1,5 +1,4 @@
 import asyncio
-import re
 import pandas as pd
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -8,9 +7,12 @@ from django.http import JsonResponse
 from django.urls import reverse
 
 from .models import User, Repository, Commit, Issue, PullRequest, GitHubUserContribution, UserAnswers
-from .data_processing import create_user_df, create_repository_df, create_commit_df, create_issue_df, create_pull_request_df, cluster_users
+from .data_processing import create_user_df, create_user_df_test, create_repository_df, create_commit_df, create_issue_df, create_pull_request_df, cluster_users
 
 from .services.data_insertion import fetch_data_github, insert_stackoverflow_data
+from .evaluation_services.code_checker import pylint_score
+from .utils import clean_answers
+
 
 
 def fetch_from_github_view(request):
@@ -58,22 +60,20 @@ def cluster_users_view(request):
     Cluster users based on their contributions to repositories.
     """
     user_df = create_user_df()
+    user_df_test = create_user_df_test()
     repository_df = create_repository_df()
     commit_df = create_commit_df()
     issue_df = create_issue_df()
     pull_request_df = create_pull_request_df()
 
 
-    clustered_data = cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df)
+    clustered_data = cluster_users(user_df, user_df_test, repository_df, commit_df, issue_df, pull_request_df)
 
     # return render(request, 'cluseterd_users.html', {'clustered_data': clustered_data})
     return HttpResponse('Data fetched and inserted successfully!')
 
-def run_selection_algorithm(request):
-    pass
-
 def send_emails_to_candidates(request):
-    candidate_emails = ['abdullahhanif821@gmail.com']
+    candidate_emails = ['abdullahhanif821@gmail.com',]
     subject = 'Congratulations! You have been selected.'
     from_email = 'engabdullahhanif@gmail.com'  
 
@@ -88,15 +88,6 @@ def send_emails_to_candidates(request):
         message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{candidate_answers_url}\n\nBest regards, \nDoodle Recruitment Team'
         send_mail(subject, message, from_email, [candidate_email])
     return JsonResponse({'message': 'Emails sent successfully'})
-
-def clean_answers(answers):
-    cleaned_answers = []
-    pattern = re.compile(r'[;\'"()]')
-    for value in answers:
-        cleaned_value = re.sub(pattern, '', value)
-        cleaned_answers.append(cleaned_value)
-    return cleaned_answers
-    
 
 def candidate_answers_view(request):
     if request.method == 'POST':
@@ -117,9 +108,8 @@ def candidate_answers_view(request):
         question1 = "Write a Python function to reverse a string."
         question2 = "Write a Python function to check if a string is a palindrome."
         question3 = "Write a Python function to calculate the factorial of a number."
-       
         user_id = request.GET.get('user_id')
-        print("User ID:", user_id)
+
         context = {
             'question1': question1,
             'question2': question2,
@@ -127,14 +117,31 @@ def candidate_answers_view(request):
             'user_id': user_id
         }
         return render(request, 'candidate_answers.html', {'context': context})
-    
 
-# evaluate the answers and return the result
 def evaluate_answers(answers):
-    # call evaulation algorithm here
-    pass
-    return HttpResponse('Data fetched and inserted successfully!')
+    accepted_users = []
+    rejected_users = []
+    answers = UserAnswers.objects.filter(status='pending')
+    if not answers:
+        return JsonResponse({'message': 'All answers have been evaluated!'})
+    
+    for answer in answers:
+        print("answer", answer.answer1)
+        answer1_score = pylint_score(answer.answer1)
+        answer2_score = pylint_score(answer.answer2)
+        answer3_score = pylint_score(answer.answer3)
+        average_score = answer1_score + answer2_score + answer3_score/3
+        if average_score >= 12:
+            answer.status = 'accepted'
+            accepted_users.append(answer.user)
+        else:
+            answer.status = 'rejected'
+            rejected_users.append(answer.user)
+        answer.save()
+    users = accepted_users + rejected_users
+    return JsonResponse({'message': 'Answers evaluated successfully!'})
 
+    
 def fetch_stackoverflow_data(request):
     
     insert_stackoverflow_data()
