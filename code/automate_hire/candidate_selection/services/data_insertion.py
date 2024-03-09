@@ -168,7 +168,3 @@ async def insert_data():
             if cleaned_data:
                 saved_user_contribution = await asyncio.gather(save_cleaned_user_contribution_data(cleaned_data, saved_user))
                 print("Saved user contribution:", saved_user_contribution)
-
-
-
-
