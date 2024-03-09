@@ -124,10 +124,6 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     merged_df = pd.merge(merged_df, issue_metrics, on='repository_id', how='left')
     merged_df = pd.merge(merged_df, pr_metrics, on='repository_id', how='left')
 
-    print("Merged DataFrame:", merged_df.head())
-    print("Merged DataFrame shape:", merged_df.shape)
-    return None
-
     user_features = merged_df.groupby('user_id').agg({
         'total_commits': 'sum',
         'total_pr_opened': 'sum',

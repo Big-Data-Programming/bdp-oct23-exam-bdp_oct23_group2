@@ -3,8 +3,6 @@ import pytz
 from asgiref.sync import sync_to_async
 
 
-
-
 def clean_github_user_data(user_data):
     """
     Clean fetched GitHub user data before saving to the database.

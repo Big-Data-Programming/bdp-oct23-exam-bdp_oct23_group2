@@ -45,4 +45,4 @@ def smallest_num(a,b,c):
 
 # read questions from db
 
-pylint_score(bay)
+# pylint_score(bay)
