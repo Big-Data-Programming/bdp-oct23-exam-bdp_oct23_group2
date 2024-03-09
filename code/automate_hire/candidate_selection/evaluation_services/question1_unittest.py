@@ -1,5 +1,7 @@
 import unittest
-
+import re
+import sys
+import io
 
 a="""
 def fact(n):  
@@ -43,5 +45,41 @@ class TestFactorialFunction(unittest.TestCase):
         with self.assertRaises(RecursionError):
             fact(-1)
 
+def capture():
+    # Redirect stdout to capture the test runner's output
+    old_stdout = sys.stdout  # Backup the original stdout
+    sys.stdout = buffer = io.StringIO()
+
+    # Load and run the tests
+    test_loader = unittest.TestLoader()
+    test = test_loader.loadTestsFromTestCase(TestFactorialFunction)
+    run_test = unittest.TextTestRunner(stream=sys.stdout)
+    run_test.run(test)
+
+    # Restore stdout
+    sys.stdout = old_stdout
+
+    # Extract the captured output from the buffer
+    captured_output = buffer.getvalue()
+    # print("Captured Output:\n", captured_output)
+
+    #Saving Runtime
+    pattern_one = r"Ran \d+ tests in ([\d.]+)s"
+    match_1 = re.search(pattern_one, captured_output)
+    if match_1:
+        time_taken = match_1.group(1)
+        print(f"Time taken to run the tests: {time_taken}s")
+    else:
+        print("Time taken to run the tests not found.")
+
+    #Saving number of test failed
+    pattern_two=r"failures=([\d]+)"
+    match_2=re.search(pattern_two, captured_output)
+    if match_2:
+        test_failed=match_2.group(1)
+        print(f"No. of test cases failed: {test_failed}")
+    else:
+        print("No. of test failed: 0")
+
 if __name__ == '__main__':
-    unittest.main()
+    capture()
