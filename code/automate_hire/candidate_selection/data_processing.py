@@ -260,7 +260,8 @@ def cluster_users(user_df_train, user_df_test, repository_df, commit_df, issue_d
     with open('logreg_model.pkl', 'wb') as f:
         pickle.dump(logreg_model, f)
 
-    # load pickled loogistic regression
+    ##
+    # load pickled loogistic regression          
     with open('logreg_model.pkl', 'rb') as f:
         loaded_logreg  = pickle.load(f)
         
@@ -268,24 +269,20 @@ def cluster_users(user_df_train, user_df_test, repository_df, commit_df, issue_d
     with open('kmeans_model.pkl', 'rb') as f:
         loaded_kmeans = pickle.load(f)
 
-
-
-    # Assuming you have a DataFrame containing new candidate data called 'new_candidates'
-    # new_candidates = []
     new_candidates = prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df)
 
+    scaled_new_candidates = scaler.fit_transform(new_candidates.drop('user_id', axis=1))
+    new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)    # k means .predict method
+    new_candidates['cluster_label'] = new_cluster_labels
 
-    # new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)    # k means .predict method
-    # new_candidates['cluster_label'] = new_cluster_labels
+    good_candidates = new_candidates[new_candidates['cluster_label'] == 1] #filter based on 1=good
 
-    # good_candidates = new_candidates[new_candidates['cluster_label'] == 0] #filter based on 0=good
+    X_good_candidates = good_candidates.drop(columns=['cluster_label'])  #logistic regression for validation of kmeans 
+    predicted_labels = loaded_logreg.predict(X_good_candidates)   #pass good candidates to model
 
-    # X_good_candidates = good_candidates.drop(columns=['cluster_label'])  #logistic regression for validation of kmeans 
-    # predicted_labels = loaded_logreg.predict(X_good_candidates)   #pass good candidates to model
+    #list of cadidates who are validated as good for sure
+    final_good_candidates = good_candidates[predicted_labels == 1] 
 
-    # #list of cadidates who are validated as good for sure
-    # final_good_candidates = good_candidates[predicted_labels == 0] 
-
-    # return final_good_candidates
+    return final_good_candidates
 
 
