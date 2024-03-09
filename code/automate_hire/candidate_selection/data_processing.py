@@ -19,7 +19,8 @@ def create_user_df():
         pd.DataFrame: DataFrame containing user data.
 
     """
-    users = User.objects.all()
+    # limit the number of users to 100
+    users = User.objects.all()[:1]
     user_data = {'id': [], 'github_username': [], 'full_name': [], 'email': [], 'location': []}
     for user in users:
         user_data['id'].append(user.id)
@@ -108,6 +109,7 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     merged_df = pd.merge(user_df, repository_df_filtered, left_on='id', right_on='user_id')
     merged_df = merged_df.rename(columns={'id_y': 'repository_id'})
     merged_df = merged_df.drop('id_x', axis=1)
+ 
 
     commit_metrics = commit_df.groupby('repository_id').size().reset_index(name='total_commits')
     issue_metrics = issue_df.groupby('repository_id').agg({'closed_issues': 'sum', 'open_issues': 'sum'}).reset_index()
@@ -121,6 +123,10 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     merged_df = pd.merge(merged_df, commit_metrics, on='repository_id', how='left')
     merged_df = pd.merge(merged_df, issue_metrics, on='repository_id', how='left')
     merged_df = pd.merge(merged_df, pr_metrics, on='repository_id', how='left')
+
+    print("Merged DataFrame:", merged_df.head())
+    print("Merged DataFrame shape:", merged_df.shape)
+    return None
 
     user_features = merged_df.groupby('user_id').agg({
         'total_commits': 'sum',
