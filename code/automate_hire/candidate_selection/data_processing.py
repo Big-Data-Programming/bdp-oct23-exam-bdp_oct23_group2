@@ -161,13 +161,13 @@ def prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, i
 
     return new_candidates_df
 
-def cluster_users(user_df_train, user_df_test, repository_df, commit_df, issue_df, pull_request_df):
-    selected_languages = ['Python', 'JavaScript', 'Java', 'Ruby', 'PHP', 'C++', 'C#', 'Go', 'Swift', 'Kotlin']
-    repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
+def cluster_users(user_df_train, repository_df, commit_df, issue_df, pull_request_df):
+    # selected_languages = ['Python', 'JavaScript', 'Java', 'Ruby', 'PHP', 'C++', 'C#', 'Go', 'Swift', 'Kotlin']
+    # repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
 
 
     
-    merged_df = pd.merge(user_df_train, repository_df_filtered, left_on='id', right_on='user_id')
+    merged_df = pd.merge(user_df_train, repository_df, left_on='id', right_on='user_id')
     merged_df = merged_df.rename(columns={'id_y': 'repository_id'})
     merged_df = merged_df.drop('id_x', axis=1)
  
@@ -239,10 +239,16 @@ def cluster_users(user_df_train, user_df_test, repository_df, commit_df, issue_d
     confusion_matrix = metrics.confusion_matrix(y_test, predicted)
     print(confusion_matrix)
 
+    with open('scaler.pkl', 'wb') as f:
+        pickle.dump(scaler, f)
+
     # pickle the logistic regression
     with open('logreg_model.pkl', 'wb') as f:
         pickle.dump(logreg_model, f)
 
+    return user_features
+
+def select_candidates(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df):
     # load pickled loogistic regression
     with open('logreg_model.pkl', 'rb') as f:
         loaded_logreg  = pickle.load(f)
@@ -251,15 +257,18 @@ def cluster_users(user_df_train, user_df_test, repository_df, commit_df, issue_d
     with open('kmeans_model.pkl', 'rb') as f:
         loaded_kmeans = pickle.load(f)
 
+    with open('scaler.pkl', 'rb') as f:
+        loaded_scaler = pickle.load(f)
 
+    
 
     # Assuming you have a DataFrame containing new candidate data called 'new_candidates'
     # new_candidates = []
     new_candidates = prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df)
 
-
     # Preprocess new candidate data (scaling, encoding, etc.)
-    scaled_new_candidates = scaler.transform(new_candidates.drop('user_id', axis=1))  # Assuming 'scaler' is the same scaler used for training
+    scaled_new_candidates = loaded_scaler.transform(new_candidates.drop('user_id', axis=1))
+
 
     # Predict clusters using K-means
     new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)

@@ -5,9 +5,10 @@ from django.shortcuts import render
 from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.urls import reverse
+from django.core.serializers.json import DjangoJSONEncoder
 
 from .models import User, Repository, Commit, Issue, PullRequest, GitHubUserContribution, UserAnswers
-from .data_processing import create_user_df, create_user_df_test, create_repository_df, create_commit_df, create_issue_df, create_pull_request_df, cluster_users
+from .data_processing import create_user_df, create_user_df_test, create_repository_df, create_commit_df, create_issue_df, create_pull_request_df, cluster_users, select_candidates
 
 from .services.data_insertion import fetch_data_github, insert_stackoverflow_data
 from .evaluation_services.code_checker import pylint_score
@@ -60,17 +61,33 @@ def cluster_users_view(request):
     Cluster users based on their contributions to repositories.
     """
     user_df = create_user_df()
-    user_df_test = create_user_df_test()
     repository_df = create_repository_df()
     commit_df = create_commit_df()
     issue_df = create_issue_df()
     pull_request_df = create_pull_request_df()
 
 
-    clustered_data = cluster_users(user_df, user_df_test, repository_df, commit_df, issue_df, pull_request_df)
+    clustered_data = cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df)
 
     # return render(request, 'cluseterd_users.html', {'clustered_data': clustered_data})
     return HttpResponse('Data fetched and inserted successfully!')
+
+def select_candidates_view(request):
+    user_df_test = create_user_df_test()
+    repository_df = create_repository_df()
+    commit_df = create_commit_df()
+    issue_df = create_issue_df()
+    pull_request_df = create_pull_request_df()
+
+    candidates = select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_request_df)
+    print("candidates", candidates)
+
+    candidates_json = candidates.to_dict(orient='records')
+    print(len(candidates_json))
+
+    # Serialize the data and return as JSON response
+    return JsonResponse({'candidates': candidates_json}, encoder=DjangoJSONEncoder)
+
 
 def send_emails_to_candidates(request):
     candidate_emails = ['abdullahhanif821@gmail.com',]
@@ -140,10 +157,12 @@ def evaluate_answers(answers):
         answer.save()
     users = accepted_users + rejected_users
     return JsonResponse({'message': 'Answers evaluated successfully!'})
-
     
 def fetch_stackoverflow_data(request):
     
     insert_stackoverflow_data()
     
     return HttpResponse('Stackoverflow Data fetched successfully!')
+
+
+    
