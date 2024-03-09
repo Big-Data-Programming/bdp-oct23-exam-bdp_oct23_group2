@@ -128,7 +128,7 @@ async def fetch_data_github():
     """
     Insert data into the database.
     """
-    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=100, max_users=100)
+    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=1250, max_users=100)
  
     for user_data in users_data:
         cleaned_data = clean_github_user_data(user_data)
@@ -139,11 +139,14 @@ async def fetch_data_github():
             repositories_data = []
             async for page in fetch_repository_data(GITHUB_ACCESS_TOKEN, user_data.login):
                 repositories_data.append(page)
-            for repository_data in repositories_data:
+            for index, repository_data in enumerate(repositories_data):
+                if index == 5:
+                    print("Reached 1 repositories for user:", user_data.login)
+                    break
                 cleaned_data = clean_repository_data(repository_data)
                 if cleaned_data:
                     saved_repository = await save_cleaned_repository_data(cleaned_data, saved_user)
-                    print("Saved repository:", saved_repository)
+                    print("Saved repository for user:", saved_repository, user_data.login)
 
                     commit_data = await fetch_commit_data(GITHUB_ACCESS_TOKEN, user_data.login, repository_data['name'])
                     for commit in commit_data:

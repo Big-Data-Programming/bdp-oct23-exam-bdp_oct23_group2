@@ -66,4 +66,10 @@ class Tags(models.Model):
     tag_name = models.CharField(max_length=100)
 
 
+class UserAnswers(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    answer1 = models.CharField(max_length=100, null=True, blank=True)
+    answer2 = models.CharField(max_length=100, null=True, blank=True)
+    answer3 = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=100, default='pending')
 
