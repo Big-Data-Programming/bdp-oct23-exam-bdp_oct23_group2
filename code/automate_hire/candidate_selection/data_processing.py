@@ -20,7 +20,7 @@ def create_user_df():
 
     """
     # limit the number of users to 100
-    users = User.objects.all()[:1]
+    users = User.objects.all()[:80]
     user_data = {'id': [], 'github_username': [], 'full_name': [], 'email': [], 'location': []}
     for user in users:
         user_data['id'].append(user.id)
@@ -124,9 +124,9 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     merged_df = pd.merge(merged_df, issue_metrics, on='repository_id', how='left')
     merged_df = pd.merge(merged_df, pr_metrics, on='repository_id', how='left')
 
-    print("Merged DataFrame:", merged_df.head())
-    print("Merged DataFrame shape:", merged_df.shape)
-    return None
+    # print("Merged DataFrame: asdfsdf", merged_df.head())
+    # print("Merged DataFrame shape:", merged_df.shape)
+    # return None
 
     user_features = merged_df.groupby('user_id').agg({
         'total_commits': 'sum',
@@ -140,9 +140,26 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     #feature sccaling
     scaler = StandardScaler()
     scaled_features = scaler.fit_transform(user_features.drop('user_id', axis=1))
+
+     #k means and elbow method to find optimum clusters 
+    # inertia = []
+    # for n_clusters in range(1, 11):       #range of no. of clusters (1,11) so that it has a suficient range to compare
+    #     kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init='auto')
+    #     print(kmeans)
+    #     kmeans.fit(scaled_features)
+    #     inertia.append(kmeans.inertia_)
+
+    # Visualize inertia values
+    # plt.plot(range(1, 11), inertia, marker='o')   #commented out the plot 
+    # plt.title('Elbow Method')
+    # plt.xlabel('Number of Clusters')
+    # plt.ylabel('Inertia')
+    # plt.show()                 
+
+    #optimal number of clusters is 4 but i forced it to use 2
     
         
-    #apply k means AGAIN with the optimum n_clusters and then
+    #apply k means AGAIN with the optimum n_clusters 
     kmeans = KMeans(n_clusters=2, random_state=42, n_init='auto')
     #print(scaled_features)
     kmeans.fit(scaled_features)
@@ -150,7 +167,7 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     user_features['cluster_label'] = kmeans.labels_
 
 
-    #IF print clusters
+    # print clusters centers
     print("Cluster Centers:")
     print(kmeans.cluster_centers_)
 
@@ -176,7 +193,7 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     logreg_model = LogisticRegression()
     logreg_model.fit(X_train, y_train)
 
-    accuracy = logreg_model.score(X_test, y_test) #slightly less reliable evaluation metrics due to the smaller testing set.
+    accuracy = logreg_model.score(X_test, y_test) 
     print("Accuracy:", accuracy)
     predicted = logreg_model.predict(X_test)
     confusion_matrix = metrics.confusion_matrix(y_test, predicted)
@@ -194,21 +211,23 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     with open('kmeans_model.pkl', 'rb') as f:
         loaded_kmeans = pickle.load(f)
 
+#the traied model is giving output as cluster 0 = 69 bad candidates cluster 1= 6 good candidates
+        #with accuracy of 0.97 
     
-    new_candidates = []
-    scaled_new_candidates = scaler.transform(new_candidates.drop('user_id', axis=1)) 
+    # new_candidates = []
+    # scaled_new_candidates = scaler.transform(new_candidates.drop('user_id', axis=1)) 
 
-    new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)    # k means .predict method
-    new_candidates['cluster_label'] = new_cluster_labels
+    # new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)    # k means .predict method
+    # new_candidates['cluster_label'] = new_cluster_labels
 
-    good_candidates = new_candidates[new_candidates['cluster_label'] == 0] #filter based on 0=good
+    # good_candidates = new_candidates[new_candidates['cluster_label'] == 0] #filter based on 0=good
 
-    X_good_candidates = good_candidates.drop(columns=['cluster_label'])  #logistic regression for validation of kmeans 
-    predicted_labels = loaded_logreg.predict(X_good_candidates)   #pass good candidates to model
+    # X_good_candidates = good_candidates.drop(columns=['cluster_label'])  #logistic regression for validation of kmeans 
+    # predicted_labels = loaded_logreg.predict(X_good_candidates)   #pass good candidates to model
 
-    #list of cadidates who are validated as good for sure
-    final_good_candidates = good_candidates[predicted_labels == 0] 
+    # #list of cadidates who are validated as good for sure
+    # final_good_candidates = good_candidates[predicted_labels == 0] 
 
-    return final_good_candidates
+    # return final_good_candidates
 
 
