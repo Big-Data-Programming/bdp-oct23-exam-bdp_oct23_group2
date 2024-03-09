@@ -1,5 +1,8 @@
 from datetime import datetime
 import pytz
+from asgiref.sync import sync_to_async
+
+
 
 
 def clean_github_user_data(user_data):
@@ -13,6 +16,7 @@ def clean_github_user_data(user_data):
         dict: Cleaned user data.
     """
     cleaned_data = {}
+    print('clean data', user_data)
     if not user_data.login or not user_data.name or not user_data.email or not user_data.location:
         return None
     else:

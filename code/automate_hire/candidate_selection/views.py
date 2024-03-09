@@ -10,7 +10,7 @@ from django.urls import reverse
 from .models import User, Repository, Commit, Issue, PullRequest, GitHubUserContribution, UserAnswers
 from .data_processing import create_user_df, create_repository_df, create_commit_df, create_issue_df, create_pull_request_df, cluster_users
 
-from .services.data_insertion import fetch_data_github
+from .services.data_insertion import fetch_data_github, insert_stackoverflow_data
 
 
 def fetch_from_github_view(request):
@@ -133,3 +133,10 @@ def candidate_answers_view(request):
 def evaluate_answers(answers):
     # call evaulation algorithm here
     pass
+    return HttpResponse('Data fetched and inserted successfully!')
+
+def fetch_stackoverflow_data(request):
+    
+    insert_stackoverflow_data()
+    
+    return HttpResponse('Stackoverflow Data fetched successfully!')

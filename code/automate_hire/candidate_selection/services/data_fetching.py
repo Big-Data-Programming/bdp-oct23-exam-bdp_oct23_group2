@@ -201,6 +201,51 @@ async def fetch_user_contribution_data(access_token, username):
 
     return contribution_data
 
+def fetch_stackoverflow_users(site='stackoverflow', page=1, pagesize=100):
+    url = f"https://api.stackexchange.com/2.3/users?site={site}&page={page}&pagesize={pagesize}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        users = data.get('items', [])
+        return users
+    elif response.status_code == 429:  
+        retry_after = int(response.headers.get('retry-after', 30))
+        print(f"Rate limit exceeded. Waiting for {retry_after} seconds before retrying.")
+        time.sleep(retry_after)
+        return fetch_stackoverflow_users(site, page, pagesize)
+    else:
+        print(f"Failed to fetch users. Status code: {response.status_code}")
+        return []
+
+def fetch_user_answers(user, site='stackoverflow'):
+    user_id = user['user_id']
+    reputation = user.get('reputation', 'N/A')
+    accept_rate = user.get('accept_rate', 'N/A')
+    url = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?order=asc&sort=votes&site={site}"
+    response = requests.get(url)
+    time.sleep(1)
+    if response.status_code == 200:
+        data = response.json()
+        answers = data.get('items', [])
+        total_answers = len(answers)
+        return total_answers
+    elif response.status_code == 429:  # Rate limit exceeded
+        print("Rate limit exceeded. Please wait before retrying.")
+    else:
+        print(f"Failed to fetch answers for user ID {user_id}. Status code: {response.status_code}")
+
+def fetch_user_questions(user_id, site='stackoverflow'):
+    url = f"https://api.stackexchange.com/2.3/users/{user_id}/questions?order=desc&sort=activity&site={site}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        questions = data.get('items', [])
+        total_questions = len(questions)
+        return total_questions
+    else:
+        print(f"Failed to fetch questions for user ID {user_id}. Status code: {response.status_code}")
+        return None
+
 
 
 
