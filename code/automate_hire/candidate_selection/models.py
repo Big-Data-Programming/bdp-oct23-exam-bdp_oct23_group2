@@ -54,16 +54,22 @@ class StackOverflowUser(models.Model):
 
 class QuestionAnswer(models.Model):
     user = models.ForeignKey(StackOverflowUser, on_delete=models.CASCADE)
-    total_questions = models.IntegerField()
-    total_answers = models.IntegerField()
-    question_upvotes = models.IntegerField()
-    question_downvotes = models.IntegerField()
-    answer_upvotes = models.IntegerField()
-    answer_downvotes = models.IntegerField()
+    total_questions = models.IntegerField(null=True, blank=True)
+    total_answers = models.IntegerField(null=True, blank=True)
+    question_upvotes = models.IntegerField(null=True, blank=True)
+    question_downvotes = models.IntegerField(null=True, blank=True)
+    answer_upvotes = models.IntegerField(null=True, blank=True)
+    answer_downvotes = models.IntegerField(null=True, blank=True)
 
 class Tags(models.Model):
     user = models.ForeignKey(StackOverflowUser, on_delete=models.CASCADE)
     tag_name = models.CharField(max_length=100)
 
 
+class UserAnswers(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    answer1 = models.CharField(max_length=100, null=True, blank=True)
+    answer2 = models.CharField(max_length=100, null=True, blank=True)
+    answer3 = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=100, default='pending')
 

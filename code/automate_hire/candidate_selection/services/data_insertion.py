@@ -5,11 +5,13 @@ import requests
 import time
 from config import GITHUB_ACCESS_TOKEN 
 
-from candidate_selection.models import User
+from candidate_selection.models import User, StackOverflowUser, QuestionAnswer
 
-from .data_fetching import fetch_github_users, fetch_repository_data, fetch_user_contribution_data,fetch_issue_data, fetch_pull_request_data, fetch_commit_data, fetch_user_contribution_data
+from .data_fetching import fetch_github_users, fetch_repository_data, fetch_user_contribution_data,fetch_issue_data, fetch_pull_request_data, fetch_commit_data, fetch_user_contribution_data, fetch_stackoverflow_users, fetch_user_answers, fetch_user_questions
 
-from .data_cleaning import clean_github_user_data, clean_repository_data, clean_commit_data, clean_issue_data, clean_pull_request_data, clean_user_contribution_data
+from .data_cleaning import clean_github_user_data, clean_repository_data, clean_commit_data, clean_issue_data, clean_pull_request_data, clean_user_contribution_data 
+# clean_user_data, clean_questions_and_answers_data
+
 
 sys.path.append('../')  
 
@@ -128,7 +130,7 @@ async def fetch_data_github():
     """
     Insert data into the database.
     """
-    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=100, max_users=100)
+    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=1250, max_users=100)
  
     for user_data in users_data:
         cleaned_data = clean_github_user_data(user_data)
@@ -139,11 +141,14 @@ async def fetch_data_github():
             repositories_data = []
             async for page in fetch_repository_data(GITHUB_ACCESS_TOKEN, user_data.login):
                 repositories_data.append(page)
-            for repository_data in repositories_data:
+            for index, repository_data in enumerate(repositories_data):
+                if index == 5:
+                    print("Reached 1 repositories for user:", user_data.login)
+                    break
                 cleaned_data = clean_repository_data(repository_data)
                 if cleaned_data:
                     saved_repository = await save_cleaned_repository_data(cleaned_data, saved_user)
-                    print("Saved repository:", saved_repository)
+                    print("Saved repository for user:", saved_repository, user_data.login)
 
                     commit_data = await fetch_commit_data(GITHUB_ACCESS_TOKEN, user_data.login, repository_data['name'])
                     for commit in commit_data:
@@ -170,8 +175,113 @@ async def fetch_data_github():
                 saved_user_contribution = await asyncio.gather(save_cleaned_user_contribution_data(cleaned_data, saved_user))
                 print("Saved user contribution:", saved_user_contribution)
 
+# write save into db functions here 
+def save_cleaned_user_data_sof():
+    pass
 
 
+# def insert_stackoverflow_data():
+#     # 1 - fetch users 
+#     # 2 - clean fetched user
+#     # 3 - save user into the db
+#     # 4 - fetch user quesiions
+#     # 5 - clean questions
+#     # 6 - save questions into db
+#     # 7 - fetch user answers
+#     # 8 - clean user answers
+#     # 9 - save user answers into db
+
+    pass
+
+def insert_user_into_database(cleaned_user_data):
+    # Create a new StackOverflowUser object with the cleaned data and save it to the database
+    try:
+        user, created = StackOverflowUser.objects.get_or_create(
+            stackoverflow_username=cleaned_user_data['user_id'],
+            reputation=cleaned_user_data['reputation'],
+            badges=cleaned_user_data['badges']
+        )
+        print(f"User '{user.stackoverflow_username}' inserted into the database.")
+    except Exception as e:
+        print(f"Failed to insert user into the database: {e}")
+
+def insert_answers_into_database(user_id, user_data):
+    try:
+        # Create a new QuestionAnswer object
+        question_answer = QuestionAnswer.objects.create(
+            user=StackOverflowUser.objects.get(pk=user_id),  # Get the user object using the user_id
+            total_questions=user_data.get('total_questions', 0),  # Assuming total_questions is part of user_data
+            total_answers=user_data.get('total_answers', 0),  # Assuming total_answers is part of user_data
+            question_upvotes=user_data.get('question_upvotes', 0),  # Assuming question_upvotes is part of user_data
+            question_downvotes=user_data.get('question_downvotes', 0),  # Assuming question_downvotes is part of user_data
+            answer_upvotes=user_data.get('answer_upvotes', 0),  # Assuming answer_upvotes is part of user_data
+            answer_downvotes=user_data.get('answer_downvotes', 0)  # Assuming answer_downvotes is part of user_data
+        )
+        print(f"QuestionAnswer for user ID {user_id} inserted into the database.")
+    except Exception as e:
+        print(f"Failed to insert QuestionAnswer for user ID {user_id}: {e}")
+
+def combine_answers_and_questions(user_answers, user_questions):
+
+    #  work on it later
+    # question_upvotes = sum(question.get('upvotes', 0) for question in user_questions)
+    # question_downvotes = sum(question.get('downvotes', 0) for question in user_questions)
+    # answer_upvotes = sum(answer.get('upvotes', 0) for answer in user_answers)
+    # answer_downvotes = sum(answer.get('downvotes', 0) for answer in user_answers)
+
+    # combined_data = {
+    #     'total_questions': len(user_questions),  # Get the total number of questions
+    #     'total_answers': len(user_answers),  # Get the total number of answers
+    #     'question_upvotes': question_upvotes,
+    #     'question_downvotes': question_downvotes,
+    #     'answer_upvotes': answer_upvotes,
+    #     'answer_downvotes': answer_downvotes
+    # }
+
+    combined_data = {
+        'total_questions': user_questions,  # Get the total number of questions
+        'total_answers': user_answers,  # Get the total number of answers
+        'question_upvotes': 5,
+        'question_downvotes': 5,
+        'answer_upvotes': 5,
+        'answer_downvotes': 5
+    }
+    return combined_data
+
+def insert_questions_into_database(user_id, cleaned_questions):
+    try:
+        print("cleaned_questions", cleaned_questions)
+        question_answer = QuestionAnswer.objects.create(
+            user=StackOverflowUser.objects.get(stackoverflow_username=user_id), 
+            total_questions=cleaned_questions['total_questions'],
+            total_answers=cleaned_questions['total_answers'],
+            question_upvotes=cleaned_questions['question_upvotes'],
+            question_downvotes=cleaned_questions['question_downvotes'],
+            answer_upvotes=cleaned_questions['answer_upvotes'],
+            answer_downvotes=cleaned_questions['answer_downvotes']
+        )
+        print(f"QuestionAnswer for user ID {user_id} inserted into the database.")
+    except Exception as e:
+        print(f"Failed to insert QuestionAnswer for user ID {user_id}: {e}")
+
+
+def insert_stackoverflow_data():
+    # users = fetch_stackoverflow_users()
+    # print('users', len(users))
+
+    # for user in users:
+    #     cleaned_user = clean_user_data(user) 
+
+    #     insert_user_into_database(cleaned_user)
+    
+    #     user_answers = fetch_user_answers(user)
+
+    #     user_questions = fetch_user_questions(user['user_id'])
+    #     questions_and_answers = combine_answers_and_questions(user_answers, user_questions)
+    #     cleaned_questions_answers_data = clean_questions_and_answers_data(questions_and_answers)
+    #     insert_questions_into_database(user['user_id'], cleaned_questions_answers_data)
+
+    pass
 
 def fetch_stackoverflow_users(site='stackoverflow', page=1, pagesize=100):
     url = f"https://api.stackexchange.com/2.3/users?site={site}&page={page}&pagesize={pagesize}"

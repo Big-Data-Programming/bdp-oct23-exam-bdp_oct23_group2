@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to the code challenge. We wish you all the best!</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body style="background-color: #f8f9fa">
+    <div class="container mt-5">
+      <div class="jumbotron bg-light">
+        <h2 class="text-primary">Welcome to the code challenge.</h2>
+        <p class="lead text-muted">We wish you all the best!</p>
+      </div>
+      <form method="post" action="{% url 'candidate-answers' %}">
+        {% csrf_token %}
+        <div class="form-group">
+          <input type="hidden" name="user_id" value="{{ context.user_id }}" />
+          <div class="form-group"></div>
+
+          <label for="answer1" class="text-dark"
+            >Question#1: {{ context.question1}}</label
+          >
+          <textarea
+            class="form-control"
+            id="answer1"
+            rows="3"
+            placeholder="Enter answer 1"
+            name="answer1"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="answer2" class="text-dark"
+            >Question#2: {{ context.question2}}</label
+          >
+          <textarea
+            class="form-control"
+            id="answer2"
+            rows="3"
+            placeholder="Enter answer 2"
+            name="answer2"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="answer3" class="text-dark"
+            >Question#3: {{ context.question3}}</label
+          >
+          <textarea
+            class="form-control"
+            id="answer3"
+            rows="3"
+            placeholder="Enter answer 3"
+            name="answer3"
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>
