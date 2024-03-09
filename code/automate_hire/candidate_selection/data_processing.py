@@ -215,29 +215,20 @@ def cluster_users(user_df, repository_df, commit_df, issue_df, pull_request_df):
     with open('kmeans_model.pkl', 'rb') as f:
         loaded_kmeans = pickle.load(f)
 
-    # Assuming you have a DataFrame containing new candidate data called 'new_candidates'
+    
     new_candidates = []
+    scaled_new_candidates = scaler.transform(new_candidates.drop('user_id', axis=1)) 
 
-    # Preprocess new candidate data (scaling, encoding, etc.)
-    scaled_new_candidates = scaler.transform(new_candidates.drop('user_id', axis=1))  # Assuming 'scaler' is the same scaler used for training
-
-    # Predict clusters using K-means
-    new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)
-
-    # Assign cluster labels to new candidate data
+    new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)    # k means .predict method
     new_candidates['cluster_label'] = new_cluster_labels
 
-    # Filter candidates belonging to the "good" cluster (assuming cluster_label 0 represents "good" candidates)
-    good_candidates = new_candidates[new_candidates['cluster_label'] == 0]
+    good_candidates = new_candidates[new_candidates['cluster_label'] == 0] #filter based on 0=good
 
-    # Use logistic regression to validate the "good" candidates and filter out the ones predicted as "bad"
-    X_good_candidates = good_candidates.drop(columns=['cluster_label'])  # Features excluding the cluster label
-    predicted_labels = loaded_logreg.predict(X_good_candidates)
+    X_good_candidates = good_candidates.drop(columns=['cluster_label'])  #logistic regression for validation of kmeans 
+    predicted_labels = loaded_logreg.predict(X_good_candidates)   #pass good candidates to model
 
-    # Filter out candidates predicted as "bad"
-    final_good_candidates = good_candidates[predicted_labels == 0]  # Assuming 0 represents "good" predictions
-
-    # Now final_good_candidates contains the list of good candidates
+    #list of cadidates who are validated as good for sure
+    final_good_candidates = good_candidates[predicted_labels == 0] 
 
     return final_good_candidates
 
