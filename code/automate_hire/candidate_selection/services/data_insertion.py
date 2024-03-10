@@ -130,7 +130,7 @@ async def fetch_data_github():
     """
     Insert data into the database.
     """
-    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=1250, max_users=100)
+    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=2200, max_users=100)
  
     for user_data in users_data:
         cleaned_data = clean_github_user_data(user_data)
@@ -142,7 +142,7 @@ async def fetch_data_github():
             async for page in fetch_repository_data(GITHUB_ACCESS_TOKEN, user_data.login):
                 repositories_data.append(page)
             for index, repository_data in enumerate(repositories_data):
-                if index == 5:
+                if index == 10:
                     print("Reached 1 repositories for user:", user_data.login)
                     break
                 cleaned_data = clean_repository_data(repository_data)

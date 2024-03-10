@@ -162,8 +162,8 @@ def prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, i
     return new_candidates_df
 
 def cluster_users(user_df_train, repository_df, commit_df, issue_df, pull_request_df):
-    # selected_languages = ['Python', 'JavaScript', 'Java', 'Ruby', 'PHP', 'C++', 'C#', 'Go', 'Swift', 'Kotlin']
-    # repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
+    selected_languages = ['Python', 'JavaScript', 'Ruby',]
+    repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
 
 
     
@@ -213,10 +213,7 @@ def cluster_users(user_df_train, repository_df, commit_df, issue_df, pull_reques
     # plt.ylabel('Inertia')
     # plt.show()                 
 
-    #optimal number of clusters is 4 but i forced it to use 2
-    
-        
-    #apply k means AGAIN with the optimum n_clusters 
+    #optimal number of clusters is 4 but i forced it to use 2 
     kmeans = KMeans(n_clusters=2, random_state=42, n_init='auto')
     #print(scaled_features)
     kmeans.fit(scaled_features)
@@ -277,10 +274,7 @@ def select_candidates(user_df_test, repository_df_filtered, commit_df, issue_df,
     with open('scaler.pkl', 'rb') as f:
         loaded_scaler = pickle.load(f)
 
-    
 
-    # Assuming you have a DataFrame containing new candidate data called 'new_candidates'
-    # new_candidates = []
     new_candidates = prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df)
 
     # Preprocess new candidate data (scaling, encoding, etc.)
@@ -293,7 +287,27 @@ def select_candidates(user_df_test, repository_df_filtered, commit_df, issue_df,
     # Assign cluster labels to new candidate data
     new_candidates['cluster_label'] = new_cluster_labels
 
+     # print clusters centers
+    print("Cluster Centers:")
+    print(loaded_kmeans.cluster_centers_)
+
+    # Print number of users in each cluster
+    print("Number of users in each cluster:")
+    print(new_candidates['cluster_label'].value_counts())
+
+    # Print user features along with cluster labels
+    print("User features with cluster labels:")
+    print(new_candidates)
+
     good_candidates = new_candidates[new_candidates['cluster_label'] == 1] #filter based on 1=good
+
+    # # Check if good_candidates dataframe is empty
+    # if good_candidates.empty:
+    #     print("No good candidates found.")
+    # else:
+    # # Print the first few rows of the good_candidates dataframe
+    #     print("Good Candidates:")
+    #     print(good_candidates.head())   
 
     X_good_candidates = good_candidates.drop(columns=['cluster_label'])  #logistic regression for validation of kmeans 
     predicted_labels = loaded_logreg.predict(X_good_candidates)   #pass good candidates to model
