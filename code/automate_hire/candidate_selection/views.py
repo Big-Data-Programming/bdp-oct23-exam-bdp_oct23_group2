@@ -106,6 +106,7 @@ def send_emails_to_candidates(request):
     candidate_emails = ['abdullahhanif821@gmail.com', 'aadishreeab.11@gmail.com']
     subject = 'Congratulations! You have been selected.'
     from_email = 'engabdullahhanif@gmail.com'  
+
     # if request.method == 'POST':
     #     user_emails = request.POST.getlist('user_email[]')  # Retrieve list of user emails
     #     user_ids = request.POST.getlist('user_id[]') 
@@ -117,7 +118,9 @@ def send_emails_to_candidates(request):
     #     return JsonResponse({'message': 'Emails sent successfully'})
 
     for user_email in candidate_emails:
-        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
+        answer_url = request.build_absolute_uri(reverse('candidate-answers'))
+        answer_url += f'?user_id={1}'
+        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{answer_url}\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
         send_mail(subject, message, from_email, [user_email])
     
 
