@@ -14,7 +14,7 @@ def pylint_score(b):
 
     # Run pylint on the temporary file
     result = subprocess.run(['pylint', filename], capture_output=True, text=True)
-    print(result.stdout)
+    # print(result.stdout)
 
     # # Find the pylint score using a regular expression
     pattern_to_search = r"Your code has been rated at ([\d.]+)/10"
@@ -23,7 +23,11 @@ def pylint_score(b):
     # storing pylint score in database
     if matches:
         score = matches.group(1)
-        print(f"pylint score: {score}/10")
+        # convert score to float
+        score = float(score)
+
+        # print(f"pylint score: {score}/10")
+        return score
     else:
         print("Score not found in pylint output")
 

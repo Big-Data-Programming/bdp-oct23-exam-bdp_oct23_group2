@@ -73,4 +73,5 @@ class UserAnswers(models.Model):
     answer3 = models.CharField(max_length=100, null=True, blank=True)
     status = models.CharField(max_length=100, default='pending')
     email_sent = models.BooleanField(default=False)
+    average_score = models.FloatField(null=True, blank=True)
 
