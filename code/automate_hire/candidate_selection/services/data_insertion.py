@@ -130,7 +130,7 @@ async def fetch_data_github():
     """
     Insert data into the database.
     """
-    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=2200, max_users=100)
+    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=2500, max_users=100)
  
     for user_data in users_data:
         cleaned_data = clean_github_user_data(user_data)

@@ -257,17 +257,17 @@ def cluster_users(user_df_train, repository_df, commit_df, issue_df, pull_reques
 
     # print("Shapes of X_train, X_test, y_train, y_test:")
     # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
-    print("NaN values in X_train:", np.isnan(X_train).any())
+    print("NaN values in X_train:", np.isnan(X_train).any())        #checking if there is any Not a Number value in dataset
     print("NaN values in X_test:", np.isnan(X_test).any())
     print("Zero-variance features in X_train:", np.var(X_train, axis=0) == 0)
 
-    # ADDED
+    #added part
     non_zero_variance_features = X_train.columns[X_train.var() != 0]
-    X_train = X_train[non_zero_variance_features]
+    X_train = X_train[non_zero_variance_features]            #filter features with non zero variance
     X_test = X_test[non_zero_variance_features]
 
 
-    logreg_model = LogisticRegression()
+    logreg_model = LogisticRegression()   #training logistic regression
     logreg_model.fit(X_train, y_train)
 
     accuracy = logreg_model.score(X_test, y_test) 
@@ -298,34 +298,28 @@ def select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_req
     with open('scaler.pkl', 'rb') as f:
         loaded_scaler = pickle.load(f)
 
-
-    # Assuming you have a DataFrame containing new candidate data called 'new_candidates'
-    # new_candidates = []
+    #new input data
     new_candidates = prepare_new_candidates_df(user_df_test, repository_df, commit_df, issue_df, pull_request_df, languages)
 
-    # Preprocess new candidate data (scaling, encoding, etc.)
-    scaled_new_candidates = loaded_scaler.transform(new_candidates.drop('user_id', axis=1))
+    scaled_new_candidates = loaded_scaler.transform(new_candidates.drop('user_id', axis=1))  #scale data
 
-
-    # Predict clusters using K-means
     new_cluster_labels = loaded_kmeans.predict(scaled_new_candidates)
-
-    # Assign cluster labels to new candidate data
     new_candidates['cluster_label'] = new_cluster_labels
 
-    # Filter candidates belonging to the "good" cluster (assuming cluster_label 1 represents "good" candidates)
+    # Filter candidates belonging to the "good" cluster
     good_candidates = new_candidates[new_candidates['cluster_label'] == 1]
 
     if not good_candidates.empty:
-        # Remove 'total_issues_closed' feature before prediction
+        # Remove 'total_issues_closed' feature before giving it to log reg because it has variance
+        #needed to match input to the input of training data
         good_candidates = good_candidates.drop(columns=['total_issues_closed'])
 
-        # Use logistic regression to validate the "good" candidates and filter out the ones predicted as "bad"
-        predicted_labels = loaded_logreg.predict(good_candidates.drop(columns=['cluster_label']))
+        
+        predicted_labels = loaded_logreg.predict(good_candidates.drop(columns=['cluster_label'])) #using log reg
 
         # Filter out candidates predicted as "bad"
-        final_good_candidates = good_candidates[predicted_labels == 1]  # Assuming 1 represents "good" predictions
-        print("final_good_candidates", final_good_candidates.to_dict(orient='records'))
+        final_good_candidates = good_candidates[predicted_labels == 1]  #1 represents "good" predictions
+        print("final_good_candidates", final_good_candidates.to_dict(orient='records')) #to print o/p like a list of dictionaries
         # print("len(final_good_candidates)", len(final_good_candidates))
 
         # fetch final_users from the database
@@ -334,22 +328,7 @@ def select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_req
 
         return final_users
     else:
-        # If there are no good candidates, return an empty DataFrame
-        return pd.DataFrame()
-
-    # # !ADDED
-    # good_candidates = good_candidates.drop(columns=['total_issues_closed'])
-
-
-    # # Use logistic regression to validate the "good" candidates and filter out the ones predicted as "bad"
-    # X_good_candidates = good_candidates.drop(columns=['cluster_label'])  # Features excluding the cluster label
-    # predicted_labels = loaded_logreg.predict(X_good_candidates)
-
-    # # Filter out candidates predicted as "bad"
-    # final_good_candidates = good_candidates[predicted_labels == 1]  # Assuming 0 represents "good" predictions
-
-    # # Now final_good_candidates contains the list of good candidates
-
-    # return final_good_candidates
+        
+        return pd.DataFrame()     #if no good candidates then empty dictionary
 
 
