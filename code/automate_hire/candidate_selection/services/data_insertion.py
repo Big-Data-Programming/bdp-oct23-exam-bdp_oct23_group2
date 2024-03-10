@@ -1,14 +1,16 @@
 import sys
 import asyncio
 from asgiref.sync import sync_to_async
-
+import requests
+import time
 from config import GITHUB_ACCESS_TOKEN 
 
 from candidate_selection.models import User, StackOverflowUser, QuestionAnswer
 
 from .data_fetching import fetch_github_users, fetch_repository_data, fetch_user_contribution_data,fetch_issue_data, fetch_pull_request_data, fetch_commit_data, fetch_user_contribution_data, fetch_stackoverflow_users, fetch_user_answers, fetch_user_questions
 
-from .data_cleaning import clean_github_user_data, clean_repository_data, clean_commit_data, clean_issue_data, clean_pull_request_data, clean_user_contribution_data, clean_user_data, clean_questions_and_answers_data
+from .data_cleaning import clean_github_user_data, clean_repository_data, clean_commit_data, clean_issue_data, clean_pull_request_data, clean_user_contribution_data 
+# clean_user_data, clean_questions_and_answers_data
 
 
 sys.path.append('../')  
@@ -124,11 +126,11 @@ def save_cleaned_user_contribution_data(cleaned_data, user):
     return contribution
 
 
-async def insert_data():
+async def fetch_data_github():
     """
     Insert data into the database.
     """
-    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=100, max_users=100)
+    users_data = await fetch_github_users(GITHUB_ACCESS_TOKEN, since_user_id=1250, max_users=100)
  
     for user_data in users_data:
         cleaned_data = clean_github_user_data(user_data)
@@ -139,11 +141,14 @@ async def insert_data():
             repositories_data = []
             async for page in fetch_repository_data(GITHUB_ACCESS_TOKEN, user_data.login):
                 repositories_data.append(page)
-            for repository_data in repositories_data:
+            for index, repository_data in enumerate(repositories_data):
+                if index == 5:
+                    print("Reached 1 repositories for user:", user_data.login)
+                    break
                 cleaned_data = clean_repository_data(repository_data)
                 if cleaned_data:
                     saved_repository = await save_cleaned_repository_data(cleaned_data, saved_user)
-                    print("Saved repository:", saved_repository)
+                    print("Saved repository for user:", saved_repository, user_data.login)
 
                     commit_data = await fetch_commit_data(GITHUB_ACCESS_TOKEN, user_data.login, repository_data['name'])
                     for commit in commit_data:
@@ -260,7 +265,6 @@ def insert_questions_into_database(user_id, cleaned_questions):
         print(f"Failed to insert QuestionAnswer for user ID {user_id}: {e}")
 
 
-
 def insert_stackoverflow_data():
     users = fetch_stackoverflow_users()
     print('users', len(users))
@@ -278,9 +282,72 @@ def insert_stackoverflow_data():
         cleaned_questions_answers_data = clean_questions_and_answers_data(questions_and_answers)
         insert_questions_into_database(user['user_id'], cleaned_questions_answers_data)
 
+    # for user in users:
+    #     cleaned_user = clean_user_data(user) 
 
+    #     insert_user_into_database(cleaned_user)
     
+    #     user_answers = fetch_user_answers(user)
 
+    #     user_questions = fetch_user_questions(user['user_id'])
+    #     questions_and_answers = combine_answers_and_questions(user_answers, user_questions)
+    #     cleaned_questions_answers_data = clean_questions_and_answers_data(questions_and_answers)
+    #     insert_questions_into_database(user['user_id'], cleaned_questions_answers_data)
 
+    pass
 
+def fetch_stackoverflow_users(site='stackoverflow', page=1, pagesize=100):
+    url = f"https://api.stackexchange.com/2.3/users?site={site}&page={page}&pagesize={pagesize}"
+    print("Request URL:", url)  # Debugging statement
+    response = requests.get(url)
+    print("Response Status Code:", response.status_code)  # Debugging statement
+    print("Response Content:", response.content)  # Debugging statement
+    if response.status_code == 200:
+        data = response.json()
+        users = data.get('items', [])
+        return users
+    elif response.status_code == 429:  # Rate limit exceeded
+        retry_after = int(response.headers.get('retry-after', 30))
+        print(f"Rate limit exceeded. Waiting for {retry_after} seconds before retrying.")
+        time.sleep(retry_after)
+        return fetch_stackoverflow_users(site, page, pagesize)
+    else:
+        print(f"Failed to fetch users. Status code: {response.status_code}")
+        return []
 
+def fetch_user_answers(users, site='stackoverflow'):
+    answers_dict = {}
+
+    for user in users:
+        user_id = user['user_id']
+        reputation = user.get('reputation', 'N/A')
+        accept_rate = user.get('accept_rate', 'N/A')
+        url = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?order=asc&sort=votes&site={site}"
+        response = requests.get(url)
+        time.sleep(1)
+        if response.status_code == 200:
+            data = response.json()
+            answers = data.get('items', [])
+            answers_dict[user_id] = {'reputation': reputation, 'accept_rate': accept_rate, 'answers': answers}
+        elif response.status_code == 429:  # Rate limit exceeded
+            print("Rate limit exceeded. Please wait before retrying.")
+        else:
+            print(f"Failed to fetch answers for user ID {user_id}. Status code: {response.status_code}")
+
+    return answers_dict
+
+def fetech_stackoverflow_users():
+    users = fetch_stackoverflow_users()
+    print(f"Fetched {len(users)} users.")
+    # answers_dict = fetch_user_answers(users)
+    # time.sleep(2)
+    # for user_id, user_data in answers_dict.items():
+    #     print(f"User ID: {user_id}")
+    #     print(f"Reputation: {user_data['reputation']}")
+    #     print(f"Accept Rate: {user_data['accept_rate']}")
+    #     print("Answers:")
+    #     for answer in user_data['answers']:
+    #         print("Answer ID:", answer['answer_id'])
+    #         print("Question ID:", answer['question_id'])
+    #         print("Answer Body:", answer['body'])
+    #         print("-----------------------------")
