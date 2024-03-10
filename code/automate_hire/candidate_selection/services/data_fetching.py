@@ -203,7 +203,7 @@ async def fetch_user_contribution_data(access_token, username):
 
 
 
-def fetch_stackoverflow_users(site='stackoverflow', page=1, pagesize=100):
+def fetch_stackoverflow_users(site='stackoverflow', page=7, pagesize=100):
     url = f"https://api.stackexchange.com/2.3/users?site={site}&page={page}&pagesize={pagesize}"
     response = requests.get(url)
     if response.status_code == 200:

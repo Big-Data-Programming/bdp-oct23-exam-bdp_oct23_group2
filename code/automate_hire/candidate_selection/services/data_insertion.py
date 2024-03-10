@@ -266,6 +266,7 @@ def insert_stackoverflow_data():
     print('users', len(users))
 
     for user in users:
+        print('user inside loop: ', user)
         cleaned_user = clean_user_data(user) 
 
         insert_user_into_database(cleaned_user)

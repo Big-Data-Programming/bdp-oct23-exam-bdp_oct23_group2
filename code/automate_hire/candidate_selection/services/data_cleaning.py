@@ -271,10 +271,13 @@ def clean_answers_data(answers_dict):
 
 
 def clean_user_data(user):
+    badges_dict = user.get('badge_counts', 0)
+    badges = badges_dict['bronze'] + badges_dict['silver'] + badges_dict['gold']
+
     cleaned_user = {
         'user_id': user['user_id'],
         'reputation': user.get('reputation', 0),
-        'badges': user.get('badges', 0)
+        'badges': badges
         # Add more fields to clean as needed
     }
     return cleaned_user
