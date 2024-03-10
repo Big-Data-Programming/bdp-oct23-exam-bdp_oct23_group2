@@ -185,5 +185,19 @@ def fetch_stackoverflow_data(request):
     
     return HttpResponse('Stackoverflow Data fetched successfully!')
 
+def send_emails_to_final_candidates(request):
+    # select users from UserAnswers with status accepted and email_sent False, send email and update email_sent to True
+    accepted_users = UserAnswers.objects.filter(status='accepted', email_sent=False)
+    subject = 'Congratulations! You have been selected.'
+    from_email = 'engabdullahhanif@gmail.com'
+    for user in accepted_users:
+        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. \n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
+        send_mail(subject, message, from_email, [user.user.email])
+        user.email_sent = True
+        user.save()
+    return JsonResponse({'message': 'Emails sent successfully!'})
 
-    
+def final_candidates_view(request):
+    # select users from UserAnswers with status accepted and email_sent False
+    final_candidates = UserAnswers.objects.filter(status='accepted', email_sent=False)
+    return render(request, 'final_candidates.html', {'final_candidates': final_candidates})

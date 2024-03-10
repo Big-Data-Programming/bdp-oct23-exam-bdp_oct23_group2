@@ -35,7 +35,7 @@ class TestFactorialFunction(unittest.TestCase):
 
     def test_factorial_of_ten(self):
         self.assertEqual(fact(10), 3628800)
-
+ 
     # def test_factorial_of_hell(self):
     #     self.assertEqual(fact(-1), -1)
 
@@ -45,3 +45,5 @@ class TestFactorialFunction(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
