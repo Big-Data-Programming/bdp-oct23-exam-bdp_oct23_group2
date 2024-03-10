@@ -1,5 +1,6 @@
 import asyncio
 import pandas as pd
+from django.shortcuts import redirect
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.core.mail import send_mail
@@ -15,6 +16,17 @@ from .evaluation_services.code_checker import pylint_score
 from .utils import clean_answers
 
 
+def select_features_view(request):
+    """
+    Select features for clustering users.
+    """
+    if request.method == 'POST':
+        languages = request.POST.getlist('languages')
+        languages_str = ','.join(languages)
+        number_of_candidates = request.POST.get('number_of_candidates')
+        redirect_url = f'/api/select-candidates?languages_str={languages_str}&number_of_candidates={number_of_candidates}'
+        return redirect(redirect_url)
+    return render(request, 'select_features.html')
 
 def fetch_from_github_view(request):
     """
@@ -79,32 +91,38 @@ def select_candidates_view(request):
     issue_df = create_issue_df()
     pull_request_df = create_pull_request_df()
 
-    candidates = select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_request_df)
-    print("candidates", candidates)
+    languages_str = request.GET.get('languages_str')
+    languages = languages_str.split(',') if languages_str else []
 
-    candidates_json = candidates.to_dict(orient='records')
-    print(len(candidates_json))
+    number_of_candidates = request.GET.get('number_of_candidates')
+    number_of_candidates = int(number_of_candidates) if number_of_candidates else 5
+    candidates = select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_request_df, languages)
+    if len(candidates) > number_of_candidates:
+        candidates = candidates[:number_of_candidates]
 
-    # Serialize the data and return as JSON response
-    return JsonResponse({'candidates': candidates_json}, encoder=DjangoJSONEncoder)
-
-
+    return render(request, 'selected_candidates.html', {'candidates': candidates})
+    
 def send_emails_to_candidates(request):
-    candidate_emails = ['abdullahhanif821@gmail.com',]
+    candidate_emails = ['abdullahhanif821@gmail.com', 'aadishreeab.11@gmail.com']
     subject = 'Congratulations! You have been selected.'
     from_email = 'engabdullahhanif@gmail.com'  
+    # if request.method == 'POST':
+    #     user_emails = request.POST.getlist('user_email[]')  # Retrieve list of user emails
+    #     user_ids = request.POST.getlist('user_id[]') 
+    #     for user_email, user_id in zip(user_emails, user_ids):
+    #         candidate_answers_url = request.build_absolute_uri(reverse('candidate-answers'))
+    #         candidate_answers_url += f'?user_id={user_id}'
+    #         message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{candidate_answers_url}\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
+    #         send_mail(subject, message, from_email, [user_email])
+    #     return JsonResponse({'message': 'Emails sent successfully'})
 
-    for candidate_email in candidate_emails:
-        candidate_answers_url = request.build_absolute_uri(reverse('candidate-answers'))
+    for user_email in candidate_emails:
+        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
+        send_mail(subject, message, from_email, [user_email])
+    
 
-
-        user_id = 12  # change this to the actual user id
-
-
-        candidate_answers_url += f'?user_id={user_id}'
-        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{candidate_answers_url}\n\nBest regards, \nDoodle Recruitment Team'
-        send_mail(subject, message, from_email, [candidate_email])
-    return JsonResponse({'message': 'Emails sent successfully'})
+    else:
+        return redirect('select-features')
 
 def candidate_answers_view(request):
     if request.method == 'POST':
