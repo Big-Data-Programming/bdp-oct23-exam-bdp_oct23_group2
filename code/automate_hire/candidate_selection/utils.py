@@ -1,4 +1,5 @@
 import re
+from .evaluation_services.code_checker import pylint_score
 
 
 def reverse_string(s):
@@ -18,17 +19,19 @@ def evaluate_reverse_string(answer):
     try:
         # exec(answer)
         exec(answer, globals())
+
         reversed_string = reverse_string('hello')
-        return reversed_string == 'olleh'
+        return [reversed_string == 'olleh', pylint_score(answer)]
     except Exception as e:
         print("error", e)
         return False
+
 
 def evaluate_palindrome(answer):
     try:
         exec(answer)
         is_palindrome = check_palindrome('radar')
-        return is_palindrome
+        return [is_palindrome, pylint_score(answer)]
     except Exception as e:
         return False
 
@@ -36,23 +39,31 @@ def evaluate_factorial(answer):
     try:
         exec(answer)
         factorial_result = calculate_factorial(5)
-        return factorial_result == 120
+        return [factorial_result == 120, pylint_score(answer)]
     except Exception as e:
         return False
 
 def evaluate_submission(submission):
     results = {}
     result_question1 = evaluate_reverse_string(submission.answer1)
-    results['question1'] = result_question1
+    results['question1'] = result_question1[0]
 
     result_question2 = evaluate_palindrome(submission.answer2)
-    results['question2'] = result_question2
+    results['question2'] = result_question2[0]
 
     result_question3 = evaluate_factorial(submission.answer3)
-    results['question3'] = result_question3
+    results['question3'] = result_question3[0]
+    print("results", results)
     print("result_question1", result_question1)
     print("result_question2", result_question2)
     print("result_question3", result_question3)   
+    scores = [result_question1[1], result_question2[1], result_question3[1]]
+    print("scores", scores)
+    average_score = sum(scores) / len(scores)
+    print("average_score", average_score)
+    submission.average_score = average_score
+    submission.save()
+
 
     if all(results.values()):
         submission.status = 'accepted'
