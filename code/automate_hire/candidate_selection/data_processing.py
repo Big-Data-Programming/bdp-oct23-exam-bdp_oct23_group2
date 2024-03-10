@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 import pickle
+import numpy as np
 
 from .models import User, Repository, Commit, Issue, PullRequest
 
@@ -19,8 +20,9 @@ def create_user_df_test():
         pd.DataFrame: DataFrame containing user data.
 
     """
-    # limit the number of users to 81
-    users = User.objects.all()[81:]
+    # limit the number of users to 80
+    users = User.objects.all()[:100]
+    # users = User.objects.all()
     user_data = {'id': [], 'github_username': [], 'full_name': [], 'email': [], 'location': []}
     for user in users:
         user_data['id'].append(user.id)
@@ -39,7 +41,8 @@ def create_user_df():
 
     """
     # limit the number of users to 80
-    users = User.objects.all()[:80]
+    users = User.objects.all()[101:]
+    # users = User.objects.all()
     user_data = {'id': [], 'github_username': [], 'full_name': [], 'email': [], 'location': []}
     for user in users:
         user_data['id'].append(user.id)
@@ -57,6 +60,8 @@ def create_repository_df():
         pd.DataFrame: DataFrame containing repository data.
 
     """
+    
+
     repositories = Repository.objects.all()
     repository_data = {'id': [], 'user_id': [], 'name': [], 'language': [], 'stars': [], 'forks': [], 'last_commit_date': []}
     for repository in repositories:
@@ -120,7 +125,7 @@ def create_pull_request_df():
         pr_data['merged_prs'].append(pr.merged_prs)
     return pd.DataFrame(pr_data)
 
-def prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df):
+def prepare_new_candidates_df(user_df_test, repository_df, commit_df, issue_df, pull_request_df, languages):
     """
     Prepare a DataFrame containing data of new candidates.
 
@@ -134,6 +139,13 @@ def prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, i
     Returns:
         pd.DataFrame: DataFrame containing data of new candidates.
     """
+
+    # selected_languages = ['Python', 'Ruby']
+    
+    repository_df_filtered = repository_df[repository_df['language'].isin(languages)]
+    # repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
+
+
     merged_df = pd.merge(user_df_test, repository_df_filtered, left_on='id', right_on='user_id')
     merged_df = merged_df.rename(columns={'id_y': 'repository_id'})
     merged_df = merged_df.drop('id_x', axis=1)
@@ -158,7 +170,6 @@ def prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, i
         'total_issues_opened': 'sum',
         'total_issues_closed': 'sum'
     }).reset_index()
-
     return new_candidates_df
 
 def cluster_users(user_df_train, repository_df, commit_df, issue_df, pull_request_df):
@@ -244,11 +255,24 @@ def cluster_users(user_df_train, repository_df, commit_df, issue_df, pull_reques
     y = user_features['cluster_label'] 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.5, random_state=42)
 
+    # print("Shapes of X_train, X_test, y_train, y_test:")
+    # print(X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+    print("NaN values in X_train:", np.isnan(X_train).any())
+    print("NaN values in X_test:", np.isnan(X_test).any())
+    print("Zero-variance features in X_train:", np.var(X_train, axis=0) == 0)
+
+    # ADDED
+    non_zero_variance_features = X_train.columns[X_train.var() != 0]
+    X_train = X_train[non_zero_variance_features]
+    X_test = X_test[non_zero_variance_features]
+
+
     logreg_model = LogisticRegression()
     logreg_model.fit(X_train, y_train)
 
     accuracy = logreg_model.score(X_test, y_test) 
     print("Accuracy:", accuracy)
+
     predicted = logreg_model.predict(X_test)
     confusion_matrix = metrics.confusion_matrix(y_test, predicted)
     print(confusion_matrix)
@@ -262,7 +286,7 @@ def cluster_users(user_df_train, repository_df, commit_df, issue_df, pull_reques
 
     return user_features
 
-def select_candidates(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df):
+def select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_request_df, languages):
     # load pickled loogistic regression
     with open('logreg_model.pkl', 'rb') as f:
         loaded_logreg  = pickle.load(f)
@@ -275,7 +299,9 @@ def select_candidates(user_df_test, repository_df_filtered, commit_df, issue_df,
         loaded_scaler = pickle.load(f)
 
 
-    new_candidates = prepare_new_candidates_df(user_df_test, repository_df_filtered, commit_df, issue_df, pull_request_df)
+    # Assuming you have a DataFrame containing new candidate data called 'new_candidates'
+    # new_candidates = []
+    new_candidates = prepare_new_candidates_df(user_df_test, repository_df, commit_df, issue_df, pull_request_df, languages)
 
     # Preprocess new candidate data (scaling, encoding, etc.)
     scaled_new_candidates = loaded_scaler.transform(new_candidates.drop('user_id', axis=1))
@@ -287,34 +313,43 @@ def select_candidates(user_df_test, repository_df_filtered, commit_df, issue_df,
     # Assign cluster labels to new candidate data
     new_candidates['cluster_label'] = new_cluster_labels
 
-     # print clusters centers
-    print("Cluster Centers:")
-    print(loaded_kmeans.cluster_centers_)
+    # Filter candidates belonging to the "good" cluster (assuming cluster_label 1 represents "good" candidates)
+    good_candidates = new_candidates[new_candidates['cluster_label'] == 1]
 
-    # Print number of users in each cluster
-    print("Number of users in each cluster:")
-    print(new_candidates['cluster_label'].value_counts())
+    if not good_candidates.empty:
+        # Remove 'total_issues_closed' feature before prediction
+        good_candidates = good_candidates.drop(columns=['total_issues_closed'])
 
-    # Print user features along with cluster labels
-    print("User features with cluster labels:")
-    print(new_candidates)
+        # Use logistic regression to validate the "good" candidates and filter out the ones predicted as "bad"
+        predicted_labels = loaded_logreg.predict(good_candidates.drop(columns=['cluster_label']))
 
-    good_candidates = new_candidates[new_candidates['cluster_label'] == 1] #filter based on 1=good
+        # Filter out candidates predicted as "bad"
+        final_good_candidates = good_candidates[predicted_labels == 1]  # Assuming 1 represents "good" predictions
+        print("final_good_candidates", final_good_candidates.to_dict(orient='records'))
+        # print("len(final_good_candidates)", len(final_good_candidates))
 
-    # # Check if good_candidates dataframe is empty
-    # if good_candidates.empty:
-    #     print("No good candidates found.")
-    # else:
-    # # Print the first few rows of the good_candidates dataframe
-    #     print("Good Candidates:")
-    #     print(good_candidates.head())   
+        # fetch final_users from the database
+        final_users = User.objects.filter(id__in=final_good_candidates['user_id'].values)
+        print("final_users", final_users.values())
 
-    X_good_candidates = good_candidates.drop(columns=['cluster_label'])  #logistic regression for validation of kmeans 
-    predicted_labels = loaded_logreg.predict(X_good_candidates)   #pass good candidates to model
+        return final_users
+    else:
+        # If there are no good candidates, return an empty DataFrame
+        return pd.DataFrame()
 
-    #list of cadidates who are validated as good for sure
-    final_good_candidates = good_candidates[predicted_labels == 1] 
+    # # !ADDED
+    # good_candidates = good_candidates.drop(columns=['total_issues_closed'])
 
-    return final_good_candidates
+
+    # # Use logistic regression to validate the "good" candidates and filter out the ones predicted as "bad"
+    # X_good_candidates = good_candidates.drop(columns=['cluster_label'])  # Features excluding the cluster label
+    # predicted_labels = loaded_logreg.predict(X_good_candidates)
+
+    # # Filter out candidates predicted as "bad"
+    # final_good_candidates = good_candidates[predicted_labels == 1]  # Assuming 0 represents "good" predictions
+
+    # # Now final_good_candidates contains the list of good candidates
+
+    # return final_good_candidates
 
 

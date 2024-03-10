@@ -1,5 +1,6 @@
 import asyncio
 import pandas as pd
+from django.shortcuts import redirect
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.core.mail import send_mail
@@ -15,6 +16,17 @@ from .evaluation_services.code_checker import pylint_score
 from .utils import clean_answers
 
 
+def select_features_view(request):
+    """
+    Select features for clustering users.
+    """
+    if request.method == 'POST':
+        languages = request.POST.getlist('languages')
+        languages_str = ','.join(languages)
+        number_of_candidates = request.POST.get('number_of_candidates')
+        redirect_url = f'/api/select-candidates?languages_str={languages_str}&number_of_candidates={number_of_candidates}'
+        return redirect(redirect_url)
+    return render(request, 'select_features.html')
 
 def fetch_from_github_view(request):
     """
@@ -79,32 +91,40 @@ def select_candidates_view(request):
     issue_df = create_issue_df()
     pull_request_df = create_pull_request_df()
 
-    candidates = select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_request_df)
-    print("candidates", candidates)
+    languages_str = request.GET.get('languages_str')
+    languages = languages_str.split(',') if languages_str else []
 
-    candidates_json = candidates.to_dict(orient='records')
-    print(len(candidates_json))
+    number_of_candidates = request.GET.get('number_of_candidates')
+    number_of_candidates = int(number_of_candidates) if number_of_candidates else 5
+    candidates = select_candidates(user_df_test, repository_df, commit_df, issue_df, pull_request_df, languages)
+    if len(candidates) > number_of_candidates:
+        candidates = candidates[:number_of_candidates]
 
-    # Serialize the data and return as JSON response
-    return JsonResponse({'candidates': candidates_json}, encoder=DjangoJSONEncoder)
-
-
+    return render(request, 'selected_candidates.html', {'candidates': candidates})
+    
 def send_emails_to_candidates(request):
-    candidate_emails = ['abdullahhanif821@gmail.com',]
+    candidate_emails = ['abdullahhanif821@gmail.com', 'aadishreeab.11@gmail.com']
     subject = 'Congratulations! You have been selected.'
     from_email = 'engabdullahhanif@gmail.com'  
 
-    for candidate_email in candidate_emails:
-        candidate_answers_url = request.build_absolute_uri(reverse('candidate-answers'))
+    # if request.method == 'POST':
+    #     user_emails = request.POST.getlist('user_email[]')  # Retrieve list of user emails
+    #     user_ids = request.POST.getlist('user_id[]') 
+    #     for user_email, user_id in zip(user_emails, user_ids):
+    #         candidate_answers_url = request.build_absolute_uri(reverse('candidate-answers'))
+    #         candidate_answers_url += f'?user_id={user_id}'
+    #         message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{candidate_answers_url}\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
+    #         send_mail(subject, message, from_email, [user_email])
+    #     return render(request, 'emails_sent_success.html')
 
-
-        user_id = 12  # change this to the actual user id
-
-
-        candidate_answers_url += f'?user_id={user_id}'
-        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{candidate_answers_url}\n\nBest regards, \nDoodle Recruitment Team'
-        send_mail(subject, message, from_email, [candidate_email])
-    return JsonResponse({'message': 'Emails sent successfully'})
+    for user_email in candidate_emails:
+        answer_url = request.build_absolute_uri(reverse('candidate-answers'))
+        answer_url += f'?user_id={1}'
+        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{answer_url}\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
+        send_mail(subject, message, from_email, [user_email])
+        return render(request, 'emails_sent_success.html')
+    else:
+        return redirect('select-features')
 
 def candidate_answers_view(request):
     if request.method == 'POST':
@@ -115,12 +135,14 @@ def candidate_answers_view(request):
         answers = [answer1, answer2, answer3]
         cleaned_answers = clean_answers(answers)
         user = User.objects.get(id=user_id)
-
+        print("user", user)
+        print("cleaned_answers", cleaned_answers)
         user_answers = UserAnswers(user=user, answer1=cleaned_answers[0], answer2=cleaned_answers[1], answer3=cleaned_answers[2])
         user_answers.save()
-
-        
-        return render(request, 'thank_you.html')
+        # print("user_answers", user_answers)
+        return HttpResponse('Stackoverflow Data fetched successfully!')
+ 
+        # return render(request, 'thank_you.html')
     else:
         question1 = "Write a Python function to reverse a string."
         question2 = "Write a Python function to check if a string is a palindrome."
@@ -135,6 +157,7 @@ def candidate_answers_view(request):
         }
         return render(request, 'candidate_answers.html', {'context': context})
 
+# not working
 def evaluate_answers(answers):
     accepted_users = []
     rejected_users = []
@@ -164,5 +187,19 @@ def fetch_stackoverflow_data(request):
     
     return HttpResponse('Stackoverflow Data fetched successfully!')
 
+def send_emails_to_final_candidates(request):
+    # select users from UserAnswers with status accepted and email_sent False, send email and update email_sent to True
+    accepted_users = UserAnswers.objects.filter(status='accepted', email_sent=False)
+    subject = 'Congratulations! You have been selected.'
+    from_email = 'engabdullahhanif@gmail.com'
+    for user in accepted_users:
+        message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. \n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
+        send_mail(subject, message, from_email, [user.user.email])
+        user.email_sent = True
+        user.save()
+    return render(request, 'emails_sent_success.html')
 
-    
+def final_candidates_view(request):
+    final_candidates = UserAnswers.objects.filter(status='accepted', email_sent=False)
+    return render(request, 'final_candidates.html', {'final_candidates': final_candidates})
+
