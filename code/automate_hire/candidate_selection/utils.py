@@ -1,6 +1,20 @@
 import re
 from .evaluation_services.code_checker import pylint_score
 
+import unittest
+from django.test import TestCase
+from django.test.runner import DiscoverRunner
+# from .test_factorial import TestFactorialFunction
+# from .test_smallest_num import TestSmallestNum
+
+
+def run_tests():
+    """
+    Run the test suite and return True if all tests pass, False otherwise.
+    """
+    test_runner = DiscoverRunner()
+    result = test_runner.run_tests(['tests.test_factorial', 'tests.test_smallest_num'])
+    return result.wasSuccessful()
 
 def reverse_string(s):
     return s[::-1]
@@ -25,7 +39,6 @@ def evaluate_reverse_string(answer):
     except Exception as e:
         print("error", e)
         return False
-
 
 def evaluate_palindrome(answer):
     try:
@@ -64,6 +77,8 @@ def evaluate_submission(submission):
     submission.average_score = average_score
     submission.save()
 
+
+    # tests_passed = run_tests()
 
     if all(results.values()):
         submission.status = 'accepted'

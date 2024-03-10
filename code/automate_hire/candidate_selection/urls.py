@@ -12,5 +12,6 @@ urlpatterns = [
     path('evaluate-answers', evaluate_answers, name='evaluate-answers'),
     path('select-candidates', select_candidates_view, name='select-candidates'),
     path('send-emails-final', send_emails_to_final_candidates, name='send-emails-final'),
-    path('final-candidates', final_candidates_view, name='final-candidates')
+    path('final-candidates', final_candidates_view, name='final-candidates'),
+
 ]

@@ -115,15 +115,14 @@ def send_emails_to_candidates(request):
     #         candidate_answers_url += f'?user_id={user_id}'
     #         message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{candidate_answers_url}\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
     #         send_mail(subject, message, from_email, [user_email])
-    #     return JsonResponse({'message': 'Emails sent successfully'})
+    #     return render(request, 'emails_sent_success.html')
 
     for user_email in candidate_emails:
         answer_url = request.build_absolute_uri(reverse('candidate-answers'))
         answer_url += f'?user_id={1}'
         message = f'Dear Candidate, \n\nCongratulations! You have been selected for a potential role at Doodle. Please visit the following link to complete the next steps:\n{answer_url}\n\nBest regards, \nDoodle Recruitment Team \n\n This is a test email. Please ignore.'
         send_mail(subject, message, from_email, [user_email])
-    
-
+        return render(request, 'emails_sent_success.html')
     else:
         return redirect('select-features')
 
@@ -136,12 +135,14 @@ def candidate_answers_view(request):
         answers = [answer1, answer2, answer3]
         cleaned_answers = clean_answers(answers)
         user = User.objects.get(id=user_id)
-
+        print("user", user)
+        print("cleaned_answers", cleaned_answers)
         user_answers = UserAnswers(user=user, answer1=cleaned_answers[0], answer2=cleaned_answers[1], answer3=cleaned_answers[2])
         user_answers.save()
-
-        
-        return render(request, 'thank_you.html')
+        # print("user_answers", user_answers)
+        return HttpResponse('Stackoverflow Data fetched successfully!')
+ 
+        # return render(request, 'thank_you.html')
     else:
         question1 = "Write a Python function to reverse a string."
         question2 = "Write a Python function to check if a string is a palindrome."
@@ -156,6 +157,7 @@ def candidate_answers_view(request):
         }
         return render(request, 'candidate_answers.html', {'context': context})
 
+# not working
 def evaluate_answers(answers):
     accepted_users = []
     rejected_users = []
@@ -195,9 +197,9 @@ def send_emails_to_final_candidates(request):
         send_mail(subject, message, from_email, [user.user.email])
         user.email_sent = True
         user.save()
-    return JsonResponse({'message': 'Emails sent successfully!'})
+    return render(request, 'emails_sent_success.html')
 
 def final_candidates_view(request):
-    # select users from UserAnswers with status accepted and email_sent False
     final_candidates = UserAnswers.objects.filter(status='accepted', email_sent=False)
     return render(request, 'final_candidates.html', {'final_candidates': final_candidates})
+

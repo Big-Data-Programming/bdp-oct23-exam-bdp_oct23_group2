@@ -1,13 +1,5 @@
 import unittest
 
-# asumming answer submitted by candidate
-a="""
-def fact(n):  
-    return 1 if (n==1 or n==0) else n * fact(n - 1); 
-"""
-
-exec(a)
-
 class TestFactorialFunction(unittest.TestCase):
     def test_factorial_of_zero(self):
         self.assertEqual(fact(0), 1)
@@ -16,7 +8,7 @@ class TestFactorialFunction(unittest.TestCase):
         self.assertEqual(fact(1), 1)
 
     def test_factorial_of_two(self):
-        self.assertEqual(fact(2), 2)
+        self.assertEqual(fact(2), 2)    
 
     def test_factorial_of_three(self):
         self.assertEqual(fact(3), 6)
