@@ -135,11 +135,10 @@ def candidate_answers_view(request):
         answers = [answer1, answer2, answer3]
         cleaned_answers = clean_answers(answers)
         user = User.objects.get(id=user_id)
-        print("user", user)
-        print("cleaned_answers", cleaned_answers)
+     
         user_answers = UserAnswers(user=user, answer1=cleaned_answers[0], answer2=cleaned_answers[1], answer3=cleaned_answers[2])
         user_answers.save()
-        # print("user_answers", user_answers)
+        print("came here",)
         return HttpResponse('Stackoverflow Data fetched successfully!')
  
         # return render(request, 'thank_you.html')

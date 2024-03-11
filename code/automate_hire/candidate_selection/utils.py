@@ -4,8 +4,8 @@ from .evaluation_services.code_checker import pylint_score
 import unittest
 from django.test import TestCase
 from django.test.runner import DiscoverRunner
-# from .test_factorial import TestFactorialFunction
-# from .test_smallest_num import TestSmallestNum
+from .test_factorial import TestFactorialFunction
+from .test_smallest_num import TestSmallestNum
 
 
 def run_tests():
@@ -78,7 +78,8 @@ def evaluate_submission(submission):
     submission.save()
 
 
-    # tests_passed = run_tests()
+    tests_passed = run_tests()
+    print("tests_passed", tests_passed)
 
     if all(results.values()):
         submission.status = 'accepted'

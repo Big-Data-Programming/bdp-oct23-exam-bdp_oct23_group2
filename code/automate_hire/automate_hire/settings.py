@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'django_extensions',
     'rest_framework', 
     
     'candidate_selection', 
@@ -140,3 +140,8 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'engabdullahhanif@gmail.com'  
 
+
+GRAPH_MODELS = { 
+    'all_applications': True,
+    'graph_models': True,
+     }
