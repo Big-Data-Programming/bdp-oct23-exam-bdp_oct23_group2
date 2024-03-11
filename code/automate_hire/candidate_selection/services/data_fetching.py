@@ -202,7 +202,6 @@ async def fetch_user_contribution_data(access_token, username):
     return contribution_data
 
 
-
 def fetch_stackoverflow_users(site='stackoverflow', page=7, pagesize=100):
     url = f"https://api.stackexchange.com/2.3/users?site={site}&page={page}&pagesize={pagesize}"
     response = requests.get(url)
@@ -231,7 +230,7 @@ def fetch_user_answers(user, site='stackoverflow'):
         answers = data.get('items', [])
         total_answers = len(answers)
         return total_answers
-    elif response.status_code == 429:  # Rate limit exceeded
+    elif response.status_code == 429:  
         print("Rate limit exceeded. Please wait before retrying.")
     else:
         print(f"Failed to fetch answers for user ID {user_id}. Status code: {response.status_code}")
@@ -247,6 +246,7 @@ def fetch_user_questions(user_id, site='stackoverflow'):
     else:
         print(f"Failed to fetch questions for user ID {user_id}. Status code: {response.status_code}")
         return None
+
 
 
 

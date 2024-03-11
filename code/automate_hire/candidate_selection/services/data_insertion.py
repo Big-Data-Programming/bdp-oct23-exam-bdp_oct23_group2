@@ -3,14 +3,15 @@ import asyncio
 from asgiref.sync import sync_to_async
 import requests
 import time
+import re
 from config import GITHUB_ACCESS_TOKEN 
 
 from candidate_selection.models import User, StackOverflowUser, QuestionAnswer
 
-from .data_fetching import fetch_github_users, fetch_repository_data, fetch_user_contribution_data,fetch_issue_data, fetch_pull_request_data, fetch_commit_data, fetch_user_contribution_data, fetch_stackoverflow_users, fetch_user_answers, fetch_user_questions
+from .data_fetching import fetch_github_users, fetch_repository_data, fetch_user_contribution_data,fetch_issue_data, fetch_pull_request_data, fetch_commit_data, fetch_user_contribution_data, fetch_stackoverflow_users, fetch_user_questions
 
 from .data_cleaning import clean_github_user_data, clean_repository_data, clean_commit_data, clean_issue_data, clean_pull_request_data, clean_user_contribution_data 
-# clean_user_data, clean_questions_and_answers_data
+
 
 
 sys.path.append('../')  
@@ -31,7 +32,7 @@ def save_cleaned_user_data(cleaned_data):
         github_username=cleaned_data['github_username'],
         defaults={'full_name': cleaned_data['full_name'], 'email': cleaned_data['email'], 'location': cleaned_data['location']}
     )
-    # Update user data if already exists
+
     if not created:
         user.full_name = cleaned_data['full_name']
         user.email = cleaned_data['email']
@@ -55,7 +56,7 @@ def save_cleaned_repository_data(cleaned_data, user):
         name=cleaned_data['name'],
         defaults={'language': cleaned_data['language'], 'stars': cleaned_data['stars'], 'forks': cleaned_data['forks'], 'last_commit_date': cleaned_data['last_commit_date']}
     )
-    # Update repository data if already exists
+
     if not created:
         repository.language = cleaned_data['language']
         repository.stars = cleaned_data['stars']
@@ -175,30 +176,22 @@ async def fetch_data_github():
                 saved_user_contribution = await asyncio.gather(save_cleaned_user_contribution_data(cleaned_data, saved_user))
                 print("Saved user contribution:", saved_user_contribution)
 
-# write save into db functions here 
+
 def save_cleaned_user_data_sof():
     pass
 
 
-# def insert_stackoverflow_data():
-#     # 1 - fetch users 
-#     # 2 - clean fetched user
-#     # 3 - save user into the db
-#     # 4 - fetch user quesiions
-#     # 5 - clean questions
-#     # 6 - save questions into db
-#     # 7 - fetch user answers
-#     # 8 - clean user answers
-#     # 9 - save user answers into db
+
 
     pass
 
 def insert_user_into_database(cleaned_user_data):
-    # Create a new StackOverflowUser object with the cleaned data and save it to the database
+
     try:
         user, created = StackOverflowUser.objects.get_or_create(
             stackoverflow_username=cleaned_user_data['user_id'],
             reputation=cleaned_user_data['reputation'],
+
             badges=cleaned_user_data['badges']
         )
         print(f"User '{user.stackoverflow_username}' inserted into the database.")
@@ -264,13 +257,122 @@ def insert_questions_into_database(user_id, cleaned_questions):
     except Exception as e:
         print(f"Failed to insert QuestionAnswer for user ID {user_id}: {e}")
 
+def clean_user_data(user):
+    """
+    Cleans the user data fetched from Stack Overflow.
+
+    Parameters:
+    - user: Dictionary containing user data fetched from Stack Overflow.
+
+    Returns:
+    - cleaned_user: Dictionary containing cleaned user data.
+    """
+    cleaned_user = {}
+
+    badges = int(user.get('badge_counts')['bronze'] + user.get('badge_counts')['gold'] + user.get('badge_counts')['silver'])
+
+    print("badges, ", badges)
+
+
+    cleaned_user['user_id'] = user.get('user_id', None)
+    cleaned_user['username'] = clean_username(user.get('username', ''))
+    cleaned_user['reputation'] = clean_reputation(user.get('reputation', 0))
+    cleaned_user['location'] = clean_location(user.get('location', ''))
+    cleaned_user['badges'] = badges
+
+
+    return cleaned_user
+
+def clean_username(username):
+    """
+    Clean the username.
+
+    Parameters:
+    - username: Username fetched from Stack Overflow.
+
+    Returns:
+    - cleaned_username: Cleaned username.
+    """
+    cleaned_username = username.strip()
+
+    return cleaned_username
+
+def clean_reputation(reputation):
+    """
+    Clean the reputation.
+
+    Parameters:
+    - reputation: Reputation fetched from Stack Overflow.
+
+    Returns:
+    - cleaned_reputation: Cleaned reputation.
+    """
+ 
+    cleaned_reputation = int(reputation)
+
+    return cleaned_reputation
+
+def clean_location(location):
+    """
+    Clean the location.
+
+    Parameters:
+    - location: Location fetched from Stack Overflow.
+
+    Returns:
+    - cleaned_location: Cleaned location.
+    """
+  
+    cleaned_location = location.strip()
+
+    return cleaned_location
+
+def clean_questions_and_answers_data(questions_and_answers):
+    """
+    Clean the questions and answers data fetched from Stack Overflow.
+
+    Parameters:
+    - questions_and_answers: List of dictionaries containing questions and answers data fetched from Stack Overflow.
+
+    Returns:
+    - cleaned_data: List of dictionaries containing cleaned questions and answers data.
+    """
+    cleaned_data = []
+
+    print("total_questions is ", questions_and_answers.get("total_questions"))
+    print("total_answers is ", questions_and_answers.get("total_answers"))
+
+    cleaned_item = {}
+
+    cleaned_item['question'] = questions_and_answers.get("total_questions")
+    cleaned_item['answer'] = questions_and_answers.get("total_answers")
+
+
+    cleaned_data.append(cleaned_item)
+
+    return cleaned_data
+
+def clean_html_tags(text):
+    """
+    Clean HTML tags from the given text.
+
+    Parameters:
+    - text: Text containing HTML tags.
+
+    Returns:
+    - cleaned_text: Text with HTML tags removed.
+    """
+    
+    cleaned_text = re.sub('<[^<]+?>', '', text)
+    
+    return cleaned_text
 
 def insert_stackoverflow_data():
     users = fetch_stackoverflow_users()
     print('users', len(users))
 
     for user in users:
-        print('user inside loop: ', user)
+        
         cleaned_user = clean_user_data(user) 
 
         insert_user_into_database(cleaned_user)
@@ -278,25 +380,15 @@ def insert_stackoverflow_data():
         user_answers = fetch_user_answers(user)
 
         user_questions = fetch_user_questions(user['user_id'])
+
         questions_and_answers = combine_answers_and_questions(user_answers, user_questions)
+
         cleaned_questions_answers_data = clean_questions_and_answers_data(questions_and_answers)
         insert_questions_into_database(user['user_id'], cleaned_questions_answers_data)
 
-    # for user in users:
-    #     cleaned_user = clean_user_data(user) 
-
-    #     insert_user_into_database(cleaned_user)
-    
-    #     user_answers = fetch_user_answers(user)
-
-    #     user_questions = fetch_user_questions(user['user_id'])
-    #     questions_and_answers = combine_answers_and_questions(user_answers, user_questions)
-    #     cleaned_questions_answers_data = clean_questions_and_answers_data(questions_and_answers)
-    #     insert_questions_into_database(user['user_id'], cleaned_questions_answers_data)
-
     pass
 
-def fetch_stackoverflow_users(site='stackoverflow', page=1, pagesize=100):
+def fetch_stackoverflow_users(site='stackoverflow', page=89, pagesize=100):
     url = f"https://api.stackexchange.com/2.3/users?site={site}&page={page}&pagesize={pagesize}"
     print("Request URL:", url)  # Debugging statement
     response = requests.get(url)
@@ -315,39 +407,30 @@ def fetch_stackoverflow_users(site='stackoverflow', page=1, pagesize=100):
         print(f"Failed to fetch users. Status code: {response.status_code}")
         return []
 
-def fetch_user_answers(users, site='stackoverflow'):
+def fetch_user_answers(user, site='stackoverflow'):
     answers_dict = {}
 
-    for user in users:
-        user_id = user['user_id']
-        reputation = user.get('reputation', 'N/A')
-        accept_rate = user.get('accept_rate', 'N/A')
-        url = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?order=asc&sort=votes&site={site}"
-        response = requests.get(url)
-        time.sleep(1)
-        if response.status_code == 200:
-            data = response.json()
-            answers = data.get('items', [])
-            answers_dict[user_id] = {'reputation': reputation, 'accept_rate': accept_rate, 'answers': answers}
-        elif response.status_code == 429:  # Rate limit exceeded
-            print("Rate limit exceeded. Please wait before retrying.")
-        else:
-            print(f"Failed to fetch answers for user ID {user_id}. Status code: {response.status_code}")
+    # for user in users:
+    print("user fetch_user_answers ", user['user_id'])
+    user_id = user['user_id']
+
+    reputation = user.get('reputation', 'N/A')
+    accept_rate = user.get('accept_rate', 'N/A')
+    url = f"https://api.stackexchange.com/2.3/users/{user_id}/answers?order=asc&sort=votes&site={site}"
+    response = requests.get(url)
+    time.sleep(1)
+    if response.status_code == 200:
+        data = response.json()
+        answers = data.get('items', [])
+        answers_dict[user_id] = {'reputation': reputation, 'accept_rate': accept_rate, 'answers': answers}
+    elif response.status_code == 429:  # Rate limit exceeded
+        print("Rate limit exceeded. Please wait before retrying.")
+    else:
+        print(f"Failed to fetch answers for user ID {user_id}. Status code: {response.status_code}")
 
     return answers_dict
 
 def fetech_stackoverflow_users():
     users = fetch_stackoverflow_users()
     print(f"Fetched {len(users)} users.")
-    # answers_dict = fetch_user_answers(users)
-    # time.sleep(2)
-    # for user_id, user_data in answers_dict.items():
-    #     print(f"User ID: {user_id}")
-    #     print(f"Reputation: {user_data['reputation']}")
-    #     print(f"Accept Rate: {user_data['accept_rate']}")
-    #     print("Answers:")
-    #     for answer in user_data['answers']:
-    #         print("Answer ID:", answer['answer_id'])
-    #         print("Question ID:", answer['question_id'])
-    #         print("Answer Body:", answer['body'])
-    #         print("-----------------------------")
+   
