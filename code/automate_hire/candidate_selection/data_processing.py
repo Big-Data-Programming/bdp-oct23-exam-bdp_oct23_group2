@@ -140,10 +140,16 @@ def prepare_new_candidates_df(user_df_test, repository_df, commit_df, issue_df, 
         pd.DataFrame: DataFrame containing data of new candidates.
     """
 
-    # selected_languages = ['Python', 'Ruby']
-    
-    repository_df_filtered = repository_df[repository_df['language'].isin(languages)]
+    # selected_languages = ['Java']
     # repository_df_filtered = repository_df[repository_df['language'].isin(selected_languages)]
+    # print("len(repository_df_filtered)", len(repository_df_filtered))
+    # return repository_df_filtered
+
+    repository_df_filtered = repository_df[repository_df['language'].isin(languages)]
+    # print("len(languages)", len(languages))
+    # print("len(repository_df_filtered)", len(repository_df_filtered))
+    # return languages
+
 
 
     merged_df = pd.merge(user_df_test, repository_df_filtered, left_on='id', right_on='user_id')
