@@ -47,10 +47,6 @@ To run AutomateHire locally, follow these steps:
 
 AutomateHire was developed collaboratively by our team as part of our class project. Contributions from team members were instrumental in building and enhancing the functionality of the system.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
 ---
 
 AutomateHire represents the collective effort of our team to develop an innovative solution for automating the candidate selection process, contributing to the advancement of talent acquisition practices in the software industry.
