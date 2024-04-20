@@ -18,6 +18,7 @@ async def fetch_github_users(access_token, since_user_id=None, max_users=None, b
     Returns:
         List of user objects fetched from GitHub.
     """
+
     async with aiohttp.ClientSession() as session:
         g = Github(access_token)
         users = []
