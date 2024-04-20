@@ -1,24 +1,56 @@
 # hushHush Recruiter Project
 
-## Overview
+# AutomateHire
 
-Doodle is a prominent software company with a diverse portfolio across various IT domains. This project aims to automate the candidate selection process, traditionally handled by recruiting firms, by building an in-house solution. The hushHush Recruiter project leverages data points such as Github contributions and Stack Overflow solutions to identify and notify potential candidates.
+AutomateHire is a collaborative project developed by our team as part of our class project. Built in Python, the project utilizes popular libraries such as sklearn, pandas, numpy, django, and asyncio to automate the candidate selection process for potential roles at Doodle, a renowned software company.
 
-## Project Structure
+## Project Overview
 
-- **User Stories Directory:**
+Doodle sought to automate its recruitment process while ensuring secrecy and avoiding deterministic algorithms to prevent social media discussions and replication of selection patterns. AutomateHire was developed to address this need, providing an interface for candidates to submit code solutions to coding questions provided by Doodle. The system also enables hiring managers to evaluate these solutions and initiate the interview process based on the assessment.
 
-  - Find detailed user stories for project stakeholders in the [https://github.com/Big-Data-Programming/bdp-oct23-exam-bdp_oct23_group2/blob/presentation1/presentation/presentation1/user-stories.md](user_stories) directory.
+## Features
 
-- **Codebase:**
-  - All project code is available in the [https://github.com/Big-Data-Programming/bdp-oct23-exam-bdp_oct23_group2/tree/presentation1/code](code) directory.
+- **User Clustering and Selection**: Leveraging KMeans and Logistic Regression algorithms for user clustering and selection.
+- **Code Evaluation**: Implementing tests for evaluating user-submitted code to ensure quality and correctness.
+- **Asynchronous Data Retrieval**: Fetching data from GitHub and Stack Overflow asynchronously to streamline the process.
+- **Triggers for User Code Submission**: Utilizing triggers to initiate actions when user code is submitted, enhancing automation.
+- **Future Work**: Planning to implement reinforcement learning for further enhancements to the candidate selection process.
 
-## Getting Started
+## Selection Criteria
 
-To get started with the hushHush Recruiter project, follow these steps:
+AutomateHire employs a comprehensive set of selection criteria, including coding activity, project contributions, skills proficiency, collaboration and teamwork, problem-solving skills, community involvement, and more. These criteria ensure a holistic evaluation of candidates' capabilities and suitability for roles at Doodle.
 
-1. Clone the repository to your local machine:
+## User Stories
 
-   ```bash
-   git clone https://github.com/Big-Data-Programming/bdp-oct23-exam-bdp_oct23_group2.git
-   ```
+### Recruiter:
+
+- **Configure Candidate Selection Criteria**: Enabling recruiters to define selection criteria and specify the desired number of candidates for selection.
+
+### Hiring Manager:
+
+- **Evaluate Code Challenges and Schedule Interviews**: Empowering hiring managers to assess code challenges submitted by candidates and schedule interviews with top candidates based on the assessment.
+
+### Candidate:
+
+- **Engage with Code Challenges and Track Application Process**: Providing candidates with the ability to submit code challenges, receive feedback, and track their application process through the platform.
+
+## Installation
+
+To run AutomateHire locally, follow these steps:
+
+1. Clone the repository.
+2. Install dependencies using `pip install -r requirements.txt`.
+3. Configure the system according to your preferences.
+4. Run the application using `python manage.py runserver`.
+
+## Contributions
+
+AutomateHire was developed collaboratively by our team as part of our class project. Contributions from team members were instrumental in building and enhancing the functionality of the system.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+AutomateHire represents the collective effort of our team to develop an innovative solution for automating the candidate selection process, contributing to the advancement of talent acquisition practices in the software industry.
