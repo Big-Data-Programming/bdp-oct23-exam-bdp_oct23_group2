@@ -2,7 +2,7 @@
 
 # AutomateHire
 
-AutomateHire is a collaborative project developed by our team as part of our class project. Built in Python, the project utilizes popular libraries such as sklearn, pandas, numpy, django, and asyncio to automate the candidate selection process for potential roles at Doodle, a renowned software company.
+AutomateHire is a collaborative project developed by our team. Built in Python, the project utilizes popular libraries such as sklearn, pandas, numpy, django, and asyncio to automate the candidate selection process for potential roles at Doodle, a renowned software company.
 
 ## Project Overview
 
